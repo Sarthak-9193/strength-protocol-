@@ -1,0 +1,3279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Personalized strength tracker with progressive programs for pushups, pullups, and custom exercises.">
+<title>Strength Protocol • Personalized Fitness Tracker</title>
+<link rel="manifest" href="data:application/json,{%22name%22:%22Strength%20Protocol%22,%22short_name%22:%22Strength%20Protocol%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230d1117%22,%22theme_color%22:%22%230d1117%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%92%AA%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}">
+<style>
+:root{
+  --bg:#0d1117; --bg-elev:#161b22; --bg-card:#1c2128; --border:#30363d;
+  --fg:#e6edf3; --fg-muted:#8b949e; --accent:#f78166; --accent-dim:#ea6a47;
+  --green:#3fb950; --green-dim:#2ea043; --yellow:#d29922; --red:#f85149;
+  --blue:#58a6ff; --purple:#a371f7; --radius:14px; --radius-sm:10px;
+  --shadow:0 8px 32px rgba(0,0,0,.4); --shadow-sm:0 2px 8px rgba(0,0,0,.3);
+  --trans:.15s ease; --font:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  --timer-bg:#0d1117ee; --timer-fg:#f78166;
+  --push-color:#f78166; --pull-color:#58a6ff;
+}
+@media (prefers-color-scheme: light){:root{--bg:#f6f8fa;--bg-elev:#fff;--bg-card:#fff;--border:#d0d7de;--fg:#1f2328;--fg-muted:#656d76;--accent:#cf4624;--green:#1a7f37;--yellow:#9a6700;--red:#cf222e;--blue:#0969da;--purple:#8250df;--timer-bg:#ffffffee;--timer-fg:#cf4624;--push-color:#cf4624;--pull-color:#0969da}}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);background:var(--bg);color:var(--fg);min-height:100vh;display:flex;flex-direction:column;line-height:1.5}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 20% 0%,color-mix(in srgb,var(--accent) 8%,transparent) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(88,166,255,.06) 0%,transparent 50%),url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.03;pointer-events:none;z-index:0}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--fg-muted)}
+.app{flex:1;display:flex;flex-direction:column;position:relative;z-index:1}
+.header{position:sticky;top:0;background:linear-gradient(180deg,var(--bg) 60%,transparent);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border);padding:14px 16px;z-index:100}
+.header-top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1100px;margin:0 auto;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--fg)}
+.brand-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--push-color),var(--pull-color));border-radius:10px;display:grid;place-content:center;font-size:1.2rem;filter:drop-shadow(0 4px 12px color-mix(in srgb,var(--accent) 40%,transparent))}
+.brand-text{font-weight:700;font-size:1.1rem;letter-spacing:-.5px}
+.brand-tag{font-size:.65rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-top:-2px}
+.plan-switcher{display:flex;background:var(--bg-card);border:1px solid var(--border);border-radius:100px;padding:4px;gap:4px;margin:0 12px}
+.plan-btn{padding:6px 14px;border-radius:100px;border:none;background:transparent;color:var(--fg-muted);font-size:.75rem;font-weight:600;cursor:pointer;transition:var(--trans);white-space:nowrap}
+.plan-btn.active{background:var(--accent);color:#0d1117;box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 30%,transparent)}
+.plan-btn.push.active{background:var(--push-color)}
+.plan-btn.pull.active{background:var(--pull-color)}
+.header-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{width:40px;height:40px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--fg);display:grid;place-content:center;cursor:pointer;transition:var(--trans);font-size:1.1rem}
+.icon-btn:hover{background:var(--bg-elev);border-color:var(--fg-muted);transform:translateY(-1px)}
+.icon-btn:active{transform:scale(.97)}
+.icon-btn.primary{background:linear-gradient(135deg,var(--accent),var(--yellow));border:none;color:#0d1117;font-weight:800;font-size:1.15rem;padding:0;width:40px;min-width:40px;height:40px;line-height:1;border-radius:11px}
+.settings-modal{display:flex;flex-direction:column;max-height:min(88vh,760px)}
+.settings-modal .modal-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--fg-muted) transparent}
+.settings-modal .modal-body::-webkit-scrollbar{width:7px}
+.settings-modal .modal-body::-webkit-scrollbar-track{background:transparent}
+.settings-modal .modal-body::-webkit-scrollbar-thumb{background:var(--fg-muted);border-radius:99px}
+.settings-modal .modal-body::-webkit-scrollbar-thumb:hover{background:var(--fg)}
+.exercise-manager{display:grid;gap:12px;padding:14px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.025);margin:16px 0}
+.exercise-manager-title{font-size:.7rem;font-weight:900;letter-spacing:.8px;color:var(--fg-muted);text-transform:uppercase}
+.exercise-select{width:100%;min-height:44px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--fg);padding:0 12px;font:inherit;font-size:.85rem}
+.exercise-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:480px){.settings-modal{max-height:92vh}.exercise-manager-actions{grid-template-columns:1fr}.icon-btn.primary{width:40px;min-width:40px}}
+.icon-btn.primary:hover{filter:brightness(1.1);box-shadow:0 4px 20px color-mix(in srgb,var(--accent) 40%,transparent)}
+.progress-wrap{margin-top:12px;max-width:1100px;margin-left:auto;margin-right:auto}
+.progress-bar{height:6px;background:var(--bg-card);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--yellow));border-radius:3px;transition:width .4s cubic-bezier(.2,.8,.2,1);width:0%}
+.progress-labels{display:flex;justify-content:space-between;font-size:.7rem;color:var(--fg-muted);margin-top:6px;font-weight:500;flex-wrap:wrap;gap:8px}
+.main{flex:1;padding:16px;max-width:1100px;margin:0 auto;width:100%}
+.phase-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px;scrollbar-width:none}
+.phase-tabs::-webkit-scrollbar{display:none}
+.phase-tab{padding:8px 14px;border-radius:100px;background:var(--bg-card);border:1px solid var(--border);color:var(--fg-muted);font-size:.8rem;font-weight:600;white-space:nowrap;cursor:pointer;transition:var(--trans)}
+.phase-tab:hover{border-color:var(--accent);color:var(--accent)}
+.phase-tab.active{background:linear-gradient(135deg,var(--accent),var(--yellow));border-color:transparent;color:#0d1117;box-shadow:0 4px 16px color-mix(in srgb,var(--accent) 30%,transparent)}
+.phase-panel{display:none;animation:fadeIn .3s ease}
+.phase-panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.day-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;transition:var(--trans);position:relative;overflow:hidden}
+.day-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:transparent;transition:var(--trans)}
+.day-card.completed::before{background:var(--green)}
+.day-card.current::before{background:var(--accent);animation:pulse 2s infinite}
+.day-card:hover{border-color:var(--fg-muted);transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.day-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.day-check{width:26px;height:26px;border-radius:7px;border:2px solid var(--border);background:var(--bg);display:grid;place-content:center;cursor:pointer;flex-shrink:0;transition:var(--trans);position:relative}
+.day-check:hover{border-color:var(--green)}
+.day-check.checked{background:var(--green);border-color:var(--green);color:#0d1117}
+.day-check.checked::after{content:"✓";font-size:.9rem;font-weight:700}
+.day-check.input-mode{background:var(--yellow);border-color:var(--yellow);color:#0d1117}
+.day-info{flex:1;min-width:0}
+.day-label{font-size:.7rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.day-title{font-weight:600;font-size:.95rem;color:var(--fg)}
+.day-sub{font-size:.75rem;color:var(--fg-muted);margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
+.day-badge{font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--bg);border:1px solid var(--border);color:var(--fg-muted)}
+.day-badge.test{background:rgba(248,81,73,.15);border-color:var(--red);color:var(--red)}
+.day-badge.gtg{background:rgba(88,166,255,.15);border-color:var(--blue);color:var(--blue)}
+.day-badge.deload{background:rgba(63,185,80,.15);border-color:var(--green);color:var(--green)}
+.day-badge.rest{background:rgba(139,148,158,.15);border-color:var(--fg-muted);color:var(--fg-muted)}
+.day-badge.negative{background:rgba(163,113,247,.15);border-color:var(--purple);color:var(--purple)}
+.sets-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.set-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.set-input-wrap{position:relative}
+.set-input{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg);font-size:.9rem;font-family:inherit;outline:none;transition:var(--trans)}
+.set-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 15%,transparent)}
+.set-input::placeholder{color:var(--fg-muted)}
+.set-input:disabled{opacity:.5;cursor:not-allowed}
+.set-btn{width:100%;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--fg);font-weight:600;font-size:.8rem;cursor:pointer;transition:var(--trans);display:flex;align-items:center;justify-content:center;gap:6px;min-height:42px}
+.set-btn:hover:not(:disabled){background:var(--bg-elev);border-color:var(--accent);color:var(--accent)}
+.set-btn:disabled{opacity:.4;cursor:not-allowed}
+.set-btn.active{background:var(--accent);border-color:var(--accent);color:#0d1117;animation:pulse 1.5s infinite}
+.set-btn.done{background:var(--green);border-color:var(--green);color:#0d1117}
+.set-btn .icon{font-size:.9rem}
+.rest-timer{display:none;align-items:center;justify-content:center;gap:10px;padding:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,transparent),rgba(210,153,34,.1));border:1px solid var(--accent);border-radius:var(--radius-sm);margin-bottom:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.rest-timer.visible{display:flex}
+.rest-timer-circle{width:48px;height:48px;transform:rotate(-90deg)}
+.rest-timer-circle-bg{fill:none;stroke:var(--border);stroke-width:4}
+.rest-timer-circle-prog{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;stroke-dasharray:138;stroke-dashoffset:0;transition:stroke-dashoffset .1s linear;filter:drop-shadow(0 0 6px var(--accent))}
+.rest-timer-text{font-size:1.3rem;font-weight:700;color:var(--accent);text-shadow:0 0 8px color-mix(in srgb,var(--accent) 50%,transparent)}
+.rest-timer-label{font-size:.65rem;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.5px}
+.rest-timer-skip{padding:6px 12px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--fg-muted);font-size:.7rem;font-weight:600;cursor:pointer;transition:var(--trans)}
+.rest-timer-skip:hover{border-color:var(--fg-muted);color:var(--fg)}
+.comment-wrap{margin-top:10px}
+.comment-label{font-size:.7rem;font-weight:600;color:var(--fg-muted);margin-bottom:6px;display:block}
+.comment-input{width:100%;min-height:60px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg);font-size:.85rem;font-family:inherit;resize:vertical;outline:none;transition:var(--trans)}
+.comment-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(88,166,255,.15)}
+.comment-input::placeholder{color:var(--fg-muted)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;transition:var(--trans)}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.stat-value{font-size:2rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--yellow));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
+.stat-label{font-size:.7rem;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;font-weight:600}
+.stat-sub{font-size:.7rem;color:var(--fg-muted);margin-top:2px}
+.chart-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;height:200px;position:relative}
+.chart-canvas{width:100%;height:100%}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;visibility:hidden;transition:var(--trans)}
+.modal-overlay.visible{opacity:1;visibility:visible}
+.modal{background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:420px;max-height:90vh;overflow:hidden;transform:scale(.95);transition:var(--trans)}
+.modal-overlay.visible .modal{transform:scale(1)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-title{font-weight:600;font-size:1rem}
+.modal-close{width:36px;height:36px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--fg-muted);cursor:pointer;display:grid;place-content:center;transition:var(--trans)}
+.modal-close:hover{background:var(--bg-card);border-color:var(--fg-muted);color:var(--fg)}
+.modal-body{padding:20px;overflow-y:auto}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;border-top:1px solid var(--border)}
+.btn{padding:10px 20px;border-radius:var(--radius-sm);font-weight:600;font-size:.85rem;cursor:pointer;transition:var(--trans);border:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--yellow));color:#0d1117}
+.btn-primary:hover{filter:brightness(1.1);box-shadow:0 4px 20px color-mix(in srgb,var(--accent) 40%,transparent)}
+.btn-secondary{background:var(--bg-card);border:1px solid var(--border);color:var(--fg)}
+.btn-secondary:hover{background:var(--bg-elev);border-color:var(--fg-muted)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{filter:brightness(1.1)}
+.btn-ghost{background:transparent;border:1px solid transparent;color:var(--fg-muted)}
+.btn-ghost:hover{color:var(--fg);background:var(--bg-card)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-info{display:flex;flex-direction:column;gap:2px}
+.setting-name{font-weight:500;font-size:.9rem}
+.setting-desc{font-size:.75rem;color:var(--fg-muted)}
+.toggle{width:48px;height:28px;border-radius:14px;background:var(--border);border:none;position:relative;cursor:pointer;transition:var(--trans)}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:var(--trans)}
+.toggle.active{background:var(--green)}
+.toggle.active::after{left:23px}
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideIn .3s ease;pointer-events:auto;max-width:320px}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--blue)}
+@keyframes slideIn{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:none}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--fg-muted)}
+.empty-icon{font-size:3rem;margin-bottom:16px;opacity:.5}
+.empty-title{font-size:1.1rem;font-weight:600;color:var(--fg);margin-bottom:8px}
+.empty-desc{font-size:.9rem;max-width:300px;margin:0 auto}
+.footer{padding:20px 16px;text-align:center;color:var(--fg-muted);font-size:.75rem;border-top:1px solid var(--border);margin-top:auto}
+@media (max-width: 700px){
+  .header-top{align-items:center}
+  .brand{min-width:0;flex:1 1 auto}
+  .header-actions{flex:0 0 auto}
+  .plan-switcher{order:3;width:100%;margin:4px 0 0;justify-content:center;overflow-x:auto}
+  .plan-btn{flex:1 1 0;min-width:0}
+}
+@media (max-width: 480px){
+  .header{padding:10px 12px}
+  .brand-text{font-size:1rem}
+  .brand-tag{font-size:.58rem}
+  .brand-icon{width:34px;height:34px}
+  .header-actions{gap:6px}
+  .icon-btn{width:38px;height:38px}
+  .icon-btn.primary{padding:0 10px}
+  .progress-labels{font-size:.65rem}
+  .day-card{padding:14px}
+  .plan-switcher{margin:8px 0 0;order:3;width:100%;justify-content:center}
+  .day-card{padding:14px}
+  .sets-grid{grid-template-columns:1fr 1fr}
+  .stat-value{font-size:1.6rem}
+}
+@media (max-width: 360px){
+  .sets-grid{grid-template-columns:1fr}
+  .set-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media print{
+  .header,.phase-tabs,.rest-timer,.set-btn,.comment-wrap,.icon-btn,.modal-overlay,.toast-container,.plan-switcher{display:none !important}
+  .day-card{break-inside:avoid;background:#fff;color:#000;border:1px solid #ccc;box-shadow:none}
+  .day-card.completed::before{background:#2ea043}
+  .main{padding:0}
+  .progress-wrap{display:none}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AESTHETIC DASHBOARD + PROGRAM BUILDER
+   ═══════════════════════════════════════════════════════════════ */
+.header{padding:12px 16px 14px;background:linear-gradient(180deg,rgba(13,17,23,.98),rgba(13,17,23,.88));border-bottom:1px solid rgba(255,255,255,.07)}
+.header-top{max-width:1180px}
+.plan-switcher{max-width:520px;overflow-x:auto;scrollbar-width:none;flex:1;justify-content:center;background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.plan-switcher::-webkit-scrollbar{display:none}
+.plan-btn{padding:7px 13px}.plan-btn.custom{padding-right:11px}.plan-btn.custom::before{content:'✦';margin-right:5px;opacity:.8}
+.dashboard-hero{width:min(1180px,calc(100% - 32px));margin:20px auto 8px;display:grid;grid-template-columns:1.25fr .75fr;gap:16px;position:relative}
+.hero-main,.hero-stats{background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.18);backdrop-filter:blur(14px);border-radius:24px}
+.hero-main{padding:28px 30px;overflow:hidden;position:relative}.hero-main::after{content:'';position:absolute;width:260px;height:260px;right:-100px;top:-120px;border-radius:50%;background:var(--accent);opacity:.11;filter:blur(10px);pointer-events:none}
+.hero-eyebrow{display:flex;align-items:center;gap:8px;color:var(--fg-muted);font-size:.68rem;font-weight:800;letter-spacing:1.2px}.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}.hero-separator{opacity:.4}
+.hero-main h1{font-size:clamp(1.8rem,4vw,3rem);line-height:1.02;letter-spacing:-1.8px;margin:14px 0 10px;max-width:650px}.hero-main p{color:var(--fg-muted);max-width:590px;font-size:.92rem}
+.hero-actions{display:flex;gap:9px;margin-top:22px;flex-wrap:wrap}.hero-cta,.hero-ghost{border-radius:12px;padding:11px 15px;font:700 .78rem var(--font);cursor:pointer;transition:.18s ease}.hero-cta{border:0;background:linear-gradient(135deg,var(--accent),#ffd166);color:#0b0f14;box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 22%,transparent)}.hero-cta:hover{transform:translateY(-1px);filter:brightness(1.05)}.hero-ghost{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);color:var(--fg)}.hero-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.hero-stats{padding:22px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}.hero-stat{min-width:0}.hero-stat-label{display:block;font-size:.62rem;font-weight:800;letter-spacing:1px;color:var(--fg-muted);margin-bottom:5px}.hero-stat strong{font-size:2rem;letter-spacing:-1px;display:block}.hero-stat small{font-size:.65rem;color:var(--fg-muted)}.hero-arrow{color:var(--fg-muted);font-size:1.1rem}.progress-stat{grid-column:1/-1;padding-top:14px;margin-top:4px;border-top:1px solid rgba(255,255,255,.07)}.progress-stat strong{font-size:1.35rem}.hero-mini-bar{height:5px;background:rgba(255,255,255,.07);border-radius:10px;margin-top:8px;overflow:hidden}.hero-mini-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#ffd166);border-radius:10px;transition:width .5s ease}
+.main{max-width:1180px;padding:18px 16px 34px}.phase-tabs{padding:2px 2px 10px}.phase-tab{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.08);padding:9px 15px}.phase-panel>div:first-child{border-color:rgba(255,255,255,.07)!important}.day-card{border-color:rgba(255,255,255,.075);background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));box-shadow:0 8px 26px rgba(0,0,0,.12)}.day-card:hover{border-color:var(--accent);box-shadow:0 14px 35px rgba(0,0,0,.2)}
+.custom-management{margin:18px 0 4px;padding-top:16px;border-top:1px solid var(--border)}
+.management-heading{font-size:.62rem;font-weight:900;letter-spacing:1.2px;color:var(--accent);margin-bottom:9px}
+.management-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(255,255,255,.015))}
+.management-card strong,.management-card span{display:block}.management-card strong{font-size:.86rem}.management-card span{margin-top:3px;color:var(--fg-muted);font-size:.68rem}.management-actions{display:flex;gap:8px;flex-shrink:0}.management-actions .btn{padding:8px 13px;font-size:.72rem}
+.custom-program-modal{width:min(850px,calc(100% - 24px));max-height:min(88vh,850px);overflow:auto}.modal-kicker{font-size:.62rem;letter-spacing:1.4px;color:var(--accent);font-weight:900;margin-bottom:5px}.modal-subtitle{color:var(--fg-muted);font-size:.78rem;margin-top:3px;max-width:560px}.program-builder{padding:22px}.builder-grid{display:grid;grid-template-columns:1fr .82fr;gap:16px}.builder-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start}.builder-field{display:flex;flex-direction:column;gap:6px;font-size:.7rem;font-weight:700;color:var(--fg-muted)}.builder-field.full{grid-column:1/-1}.builder-field .comment-input{margin:0}.builder-preview{border:1px solid rgba(255,255,255,.08);border-radius:18px;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));padding:18px;min-height:280px}.preview-top{display:flex;justify-content:space-between;align-items:center;color:var(--fg-muted);font-size:.62rem;font-weight:900;letter-spacing:1px}.preview-chip{padding:4px 8px;border-radius:99px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:.58rem}.preview-goal{display:flex;align-items:baseline;gap:12px;margin:30px 0 0;font-size:1.2rem;color:var(--fg-muted)}.preview-goal strong{font-size:3rem;line-height:1;letter-spacing:-2px;color:var(--fg)}.preview-label{font-size:.68rem;color:var(--fg-muted);margin-top:8px}.preview-phases{display:grid;gap:8px;margin-top:22px}.preview-phase{display:grid;grid-template-columns:78px 1fr auto;gap:8px;align-items:center;font-size:.65rem}.preview-phase span:first-child{font-weight:800}.preview-phase-bar{height:6px;border-radius:10px;background:rgba(255,255,255,.07);overflow:hidden}.preview-phase-bar i{display:block;height:100%;border-radius:10px;background:var(--phase-color)}.preview-note{display:flex;gap:8px;margin-top:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);font-size:.68rem;color:var(--fg-muted)}.preview-note span:first-child{color:var(--accent)}.builder-principles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}.builder-principles>div{padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:13px;background:rgba(255,255,255,.02)}.builder-principles b{display:block;color:var(--accent);font-size:.58rem;letter-spacing:1px}.builder-principles span{display:block;font-size:.72rem;font-weight:800;margin-top:4px}.builder-principles small{display:block;color:var(--fg-muted);font-size:.62rem;margin-top:3px}.builder-submit{min-width:190px}.builder-submit span{margin-left:8px}
+@media(max-width:760px){.header-top{align-items:center}.brand{flex:1;min-width:170px}.plan-switcher{order:3;flex-basis:100%;max-width:none;margin:2px 0 0;justify-content:flex-start}.dashboard-hero{grid-template-columns:1fr;margin-top:14px}.hero-main{padding:22px}.hero-stats{grid-template-columns:1fr auto 1fr}.builder-grid{grid-template-columns:1fr}.builder-preview{min-height:0}.builder-principles{grid-template-columns:1fr}.custom-program-modal{max-height:92vh}}
+@media(max-width:700px){
+  .header-top{gap:8px}
+  .brand{min-width:0;max-width:none;flex:1 1 auto}
+  .brand-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .header-actions{margin-left:auto}
+  .icon-btn.primary{width:40px;height:40px;padding:0;font-size:0;position:relative}
+  .icon-btn.primary::before{content:"+";font-size:1.35rem;line-height:1;font-weight:800}
+}
+@media(max-width:480px){.dashboard-hero{width:calc(100% - 20px)}.main{padding:12px 10px 28px}.hero-main h1{font-size:1.8rem}.hero-main p{font-size:.8rem}.hero-actions>*{flex:1}.hero-stat strong{font-size:1.65rem}.builder-fields{grid-template-columns:1fr}.builder-field.full{grid-column:auto}.program-builder{padding:16px}.modal-header{padding:18px}.modal-footer{padding:14px 16px;gap:8px}.modal-footer>*{flex:1}}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   FIRST-RUN ONBOARDING
+   ═══════════════════════════════════════════════════════════════ */
+.onboarding-overlay{position:fixed;inset:0;z-index:5000;background:rgba(5,8,13,.88);backdrop-filter:blur(22px) saturate(140%);display:grid;place-items:center;padding:20px;overflow:auto}
+.onboarding-overlay[hidden]{display:none}
+.onboarding-field[hidden]{display:none!important}
+.onboarding-shell{width:min(920px,100%);min-height:min(690px,calc(100vh - 40px));border:1px solid rgba(255,255,255,.1);border-radius:28px;background:linear-gradient(145deg,rgba(28,33,40,.97),rgba(13,17,23,.98));box-shadow:0 30px 100px rgba(0,0,0,.55);display:grid;grid-template-columns:.9fr 1.1fr;overflow:hidden}
+.onboarding-aside{padding:42px;background:radial-gradient(circle at 20% 10%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 42%),radial-gradient(circle at 90% 85%,rgba(88,166,255,.16),transparent 42%),linear-gradient(160deg,#171d26,#0d1117);display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid rgba(255,255,255,.07)}
+.onboarding-logo{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-size:1.45rem;background:linear-gradient(135deg,var(--accent),var(--blue));box-shadow:0 10px 30px color-mix(in srgb,var(--accent) 25%,transparent)}
+.onboarding-aside h1{font-size:clamp(2.2rem,5vw,4.2rem);line-height:.96;letter-spacing:-3px;max-width:360px;margin-top:20px}
+.onboarding-aside p{color:var(--fg-muted);max-width:340px;font-size:.9rem;line-height:1.7;margin-top:18px}
+.onboarding-steps{display:flex;gap:8px}.onboarding-step-dot{height:5px;flex:1;max-width:70px;border-radius:99px;background:rgba(255,255,255,.1);transition:.2s}.onboarding-step-dot.active{background:var(--accent)}
+.onboarding-main{padding:38px 40px;display:flex;flex-direction:column;min-width:0}
+.onboarding-kicker{font-size:.65rem;letter-spacing:1.6px;font-weight:900;color:var(--accent);text-transform:uppercase}
+.onboarding-main h2{font-size:clamp(1.7rem,3vw,2.35rem);letter-spacing:-1.5px;margin-top:7px}
+.onboarding-main .lead{color:var(--fg-muted);font-size:.82rem;margin-top:6px;max-width:600px}
+.onboarding-form{margin-top:28px;display:grid;gap:15px;flex:1;align-content:start}
+.onboarding-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.onboarding-field{display:grid;gap:6px}.onboarding-field.full{grid-column:1/-1}
+.onboarding-field label{font-size:.68rem;font-weight:800;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.5px}
+.onboarding-field input,.onboarding-field select{width:100%;height:48px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.035);color:var(--fg);padding:0 13px;font:inherit;outline:none;transition:.15s}
+.onboarding-field input:focus,.onboarding-field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 10%,transparent)}
+.onboarding-choice{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.onboarding-choice button{min-height:72px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.025);color:var(--fg);text-align:left;padding:13px;cursor:pointer;transition:.15s}.onboarding-choice button:hover{border-color:var(--fg-muted);transform:translateY(-1px)}.onboarding-choice button.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent);box-shadow:0 0 0 1px var(--accent) inset}.onboarding-choice strong{display:block;font-size:.85rem}.onboarding-choice span{display:block;color:var(--fg-muted);font-size:.66rem;margin-top:3px}
+.onboarding-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.07)}
+.onboarding-back{background:transparent;border:0;color:var(--fg-muted);font-weight:700;padding:10px;cursor:pointer}.onboarding-next{min-width:150px}
+.onboarding-note{font-size:.65rem;color:var(--fg-muted);line-height:1.5;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}
+.onboarding-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.onboarding-summary>div{padding:12px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}.onboarding-summary b{display:block;font-size:1.15rem}.onboarding-summary span{font-size:.62rem;color:var(--fg-muted)}
+.hero-greeting{font-size:.72rem;color:var(--fg-muted);font-weight:700;letter-spacing:.3px;margin-bottom:8px}
+.profile-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:99px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);font-size:.63rem;color:var(--fg-muted);margin-top:14px}
+@media(max-width:760px){.onboarding-shell{grid-template-columns:1fr;min-height:0}.onboarding-aside{padding:25px 24px 22px;min-height:190px}.onboarding-aside h1{font-size:2.25rem;letter-spacing:-1.8px}.onboarding-aside p{font-size:.78rem;margin-top:10px}.onboarding-main{padding:26px 22px}.onboarding-form{margin-top:22px}.onboarding-summary{grid-template-columns:1fr 1fr}.onboarding-summary>div:last-child{grid-column:1/-1}}
+@media(max-width:480px){.onboarding-overlay{padding:8px}.onboarding-shell{border-radius:20px;min-height:calc(100vh - 16px)}.onboarding-aside{min-height:165px;padding:20px}.onboarding-logo{width:40px;height:40px}.onboarding-aside h1{font-size:1.95rem}.onboarding-main{padding:22px 18px}.onboarding-grid{grid-template-columns:1fr}.onboarding-field.full{grid-column:auto}.onboarding-choice{grid-template-columns:1fr}.onboarding-footer{margin-top:18px}.onboarding-next{min-width:125px}}
+
+.btn.reset-confirming{background:var(--warning,#f2cc60)!important;color:#111827!important;border-color:var(--warning,#f2cc60)!important;animation:pulse .6s ease-in-out infinite alternate}
+
+/* ═══════════════════════════════════════════════════════════════
+   UI/UX REFINEMENT — v3
+   Visual-only refinement layer; existing functionality preserved.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#080b10;
+  --bg-elev:#10151d;
+  --bg-card:#141a22;
+  --border:rgba(255,255,255,.085);
+  --fg:#f2f5f8;
+  --fg-muted:#8e99a8;
+  --accent:#f78166;
+  --accent-dim:#e8664f;
+  --blue:#69a9ff;
+  --purple:#a98cff;
+  --green:#55d48a;
+  --yellow:#f3c96a;
+  --red:#ff5c61;
+  --radius:18px;
+  --radius-sm:12px;
+  --shadow:0 24px 70px rgba(0,0,0,.34);
+  --shadow-sm:0 10px 28px rgba(0,0,0,.22);
+  --trans:.2s cubic-bezier(.2,.75,.25,1);
+}
+html{scroll-behavior:smooth}
+body{background:
+  radial-gradient(circle at 10% -5%,color-mix(in srgb,var(--accent) 8%,transparent),transparent 28%),
+  radial-gradient(circle at 92% 15%,rgba(105,169,255,.065),transparent 25%),
+  var(--bg);letter-spacing:-.01em}
+body::before{opacity:.018}
+
+/* Header */
+.header{
+  padding:12px 18px 13px;
+  background:rgba(8,11,16,.76);
+  border-bottom:1px solid rgba(255,255,255,.075);
+  box-shadow:0 12px 35px rgba(0,0,0,.12);
+}
+.header-top{max-width:1180px;min-height:48px;gap:16px}
+.brand{gap:11px}
+.brand-icon{
+  width:40px;height:40px;border-radius:13px;
+  background:linear-gradient(145deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));
+  box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 22%,transparent);
+}
+.brand-text{font-size:1.02rem;font-weight:780;letter-spacing:-.55px}
+.brand-tag{font-size:.6rem;letter-spacing:1px;margin-top:0;color:var(--accent)}
+.plan-switcher{
+  margin:0 auto;
+  padding:4px;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.075);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.plan-btn{padding:7px 15px;font-size:.72rem;color:#8994a3}
+.plan-btn.active{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));color:#11151b;box-shadow:0 5px 18px color-mix(in srgb,var(--accent) 18%,transparent)}
+.header-actions{gap:7px}
+.icon-btn{width:42px;height:42px;border-radius:13px;background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.085)}
+.icon-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);transform:translateY(-2px)}
+.icon-btn.primary{width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));box-shadow:0 7px 22px color-mix(in srgb,var(--accent) 18%,transparent)}
+.progress-wrap{max-width:1180px;margin-top:11px}
+.progress-bar{height:5px;border:0;background:rgba(255,255,255,.07);border-radius:99px}
+.progress-fill{background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));box-shadow:0 0 12px color-mix(in srgb,var(--accent) 30%,transparent)}
+.progress-labels{font-size:.65rem;margin-top:7px;color:#7f8a99}
+
+/* Dashboard */
+.dashboard-hero{width:min(1180px,calc(100% - 32px));margin:24px auto 10px;gap:14px}
+.hero-main,.hero-stats{
+  border:1px solid rgba(255,255,255,.085);
+  background:linear-gradient(145deg,rgba(25,31,40,.88),rgba(15,20,27,.82));
+  box-shadow:0 24px 60px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.025);
+  border-radius:22px;
+}
+.hero-main{padding:30px 32px;min-height:270px}
+.hero-main::after{width:340px;height:340px;right:-150px;top:-170px;opacity:.075}
+.hero-greeting{font-size:.72rem;color:#a5afbc;margin-bottom:11px}
+.hero-eyebrow{font-size:.65rem;letter-spacing:1.45px;color:#8793a2}
+.live-dot{width:6px;height:6px;box-shadow:0 0 12px var(--accent)}
+.hero-main h1{font-size:clamp(2rem,4.2vw,3.25rem);letter-spacing:-2.7px;margin:15px 0 10px;max-width:720px}
+.hero-main p{font-size:.9rem;line-height:1.65;color:#8f9aa9;max-width:600px}
+.hero-actions{margin-top:24px}
+.hero-cta{min-height:46px;padding:12px 18px;border-radius:13px;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));box-shadow:0 12px 28px color-mix(in srgb,var(--accent) 18%,transparent);font-size:.78rem}
+.hero-cta:hover{transform:translateY(-2px);box-shadow:0 15px 34px color-mix(in srgb,var(--accent) 24%,transparent)}
+.hero-stats{padding:26px;min-height:270px}
+.hero-stat-label{font-size:.6rem;letter-spacing:1.2px;color:#7f8997}
+.hero-stat strong{font-size:2.45rem;letter-spacing:-1.8px}
+.hero-stat small{font-size:.64rem;color:#768291}
+.hero-arrow{font-size:1rem;color:#657181}
+.progress-stat{padding-top:18px;margin-top:6px;border-top-color:rgba(255,255,255,.065)}
+.progress-stat strong{font-size:1.25rem}
+.hero-mini-bar{height:6px;margin-top:10px;background:rgba(255,255,255,.07)}
+.hero-mini-bar i{background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));box-shadow:0 0 12px color-mix(in srgb,var(--accent) 25%,transparent)}
+
+/* Main / phases */
+.main{max-width:1180px;padding:20px 16px 42px}
+.phase-tabs{gap:7px;margin-bottom:14px;padding:2px 1px 10px}
+.phase-tab{padding:9px 16px;border-radius:11px;background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.075);font-size:.72rem}
+.phase-tab:hover{background:rgba(255,255,255,.055);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.phase-tab.active{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 16%,transparent),rgba(255,200,103,.09));border-color:color-mix(in srgb,var(--accent) 48%,transparent);color:color-mix(in srgb,var(--accent) 72%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 8%,transparent)}
+.phase-panel>div:first-child{border-color:rgba(255,255,255,.065)!important}
+
+/* Workout cards */
+.day-card{
+  padding:19px;
+  margin-bottom:13px;
+  border-radius:18px;
+  border-color:rgba(255,255,255,.07);
+  background:linear-gradient(145deg,rgba(21,27,35,.86),rgba(14,19,26,.78));
+  box-shadow:0 8px 28px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.02);
+}
+.day-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.14);box-shadow:0 16px 38px rgba(0,0,0,.2)}
+.day-card.current{border-color:color-mix(in srgb,var(--accent) 25%,transparent);box-shadow:0 14px 38px color-mix(in srgb,var(--accent) 6%,transparent)}
+.day-card.current::before{background:linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff))}
+.day-card.completed::before{background:var(--green)}
+.day-header{gap:13px;margin-bottom:14px}
+.day-check{width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.025)}
+.day-label{font-size:.62rem;letter-spacing:1.1px;color:color-mix(in srgb,var(--accent) 70%,#fff)}
+.day-title{font-size:1rem;letter-spacing:-.25px}
+.day-sub{font-size:.73rem;color:#7e8998}
+.day-badge{padding:3px 8px;font-size:.57rem;background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.075)}
+.sets-grid{gap:8px}
+.set-btn{min-height:46px;border-radius:12px;background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.075);font-size:.77rem}
+.set-btn:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 7%,transparent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:color-mix(in srgb,var(--accent) 72%,#fff);transform:translateY(-1px)}
+.set-btn.active{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));border-color:transparent;color:#11151b;box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 15%,transparent)}
+.set-btn.done{background:rgba(85,212,138,.14);border-color:rgba(85,212,138,.45);color:#76e4a1}
+.rest-timer{border-radius:13px}
+.comment-input{border-radius:12px;background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.075)}
+.comment-input:focus{border-color:color-mix(in srgb,var(--accent) 55%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 8%,transparent)}
+
+/* General controls / forms */
+.btn{min-height:44px;padding:10px 17px;border-radius:12px;font-size:.78rem;font-weight:750}
+.btn-primary{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 13%,transparent)}
+.btn-primary:hover{transform:translateY(-1px);filter:none;box-shadow:0 12px 28px color-mix(in srgb,var(--accent) 20%,transparent)}
+.btn-secondary{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.09)}
+.btn-secondary:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
+.btn-danger{background:linear-gradient(135deg,#ff5c61,#e94d58)}
+input,select,textarea{border-radius:12px!important;background:rgba(255,255,255,.025)!important;border-color:rgba(255,255,255,.09)!important;color:var(--fg)!important}
+input:focus,select:focus,textarea:focus{border-color:color-mix(in srgb,var(--accent) 60%,transparent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 8%,transparent)!important;outline:none}
+
+/* Modals */
+.modal-overlay{background:rgba(3,6,10,.76);backdrop-filter:blur(14px) saturate(120%);padding:14px}
+.modal{max-width:500px;border-radius:20px;border-color:rgba(255,255,255,.1);background:linear-gradient(150deg,#151b24,#0f141b);box-shadow:0 35px 100px rgba(0,0,0,.55)}
+.modal-header{padding:17px 20px;border-bottom-color:rgba(255,255,255,.07)}
+.modal-title{font-size:.9rem;font-weight:800;letter-spacing:-.2px}
+.modal-close{width:34px;height:34px;border-radius:10px;border-color:rgba(255,255,255,.08)}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top-color:rgba(255,255,255,.07)}
+.settings-modal{max-width:560px}
+.settings-modal .modal-body{scrollbar-color:#566172 transparent}
+.setting-row{padding:15px 0;border-bottom-color:rgba(255,255,255,.06)}
+.setting-name{font-size:.82rem;font-weight:650}
+.setting-desc{font-size:.69rem;color:#788494;line-height:1.5}
+.toggle{box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.exercise-manager{padding:16px;border-radius:16px;background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.075)}
+.exercise-manager-title{font-size:.62rem;letter-spacing:1.2px;color:#9ca6b4}
+.exercise-manager-actions{gap:9px}
+
+/* Toasts */
+.toast-container{right:18px;bottom:18px;gap:9px}
+.toast{padding:12px 14px;border-radius:13px;background:rgba(18,24,32,.94);border-color:rgba(255,255,255,.09);backdrop-filter:blur(12px);box-shadow:0 18px 50px rgba(0,0,0,.35);font-size:.76rem}
+
+/* Empty / footer */
+.empty-state{padding:72px 20px}
+.empty-icon{font-size:2.5rem;filter:grayscale(.2)}
+.footer{padding:24px 16px;color:#687383;border-top-color:rgba(255,255,255,.06);font-size:.68rem}
+
+/* Onboarding */
+.onboarding-overlay{background:rgba(3,6,10,.9);backdrop-filter:blur(26px) saturate(125%)}
+.onboarding-shell{border-color:rgba(255,255,255,.105);border-radius:26px;background:linear-gradient(145deg,#151b24,#0c1117);box-shadow:0 40px 120px rgba(0,0,0,.62)}
+.onboarding-aside{padding:44px;background:radial-gradient(circle at 20% 10%,color-mix(in srgb,var(--accent) 17%,transparent),transparent 42%),radial-gradient(circle at 90% 85%,rgba(105,169,255,.11),transparent 42%),linear-gradient(160deg,#161d27,#0b1016);border-right-color:rgba(255,255,255,.06)}
+.onboarding-logo{border-radius:14px;background:linear-gradient(145deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 20%,transparent)}
+.onboarding-aside h1{letter-spacing:-3.3px}
+.onboarding-kicker{color:color-mix(in srgb,var(--accent) 70%,#fff);letter-spacing:1.7px}
+.onboarding-main h2{letter-spacing:-1.8px}
+.onboarding-main .lead{line-height:1.6}
+.onboarding-field label{font-size:.64rem!important;letter-spacing:.6px!important;color:#9ca6b4!important}
+.onboarding-choice button{min-height:76px;border-radius:14px;background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.08)}
+.onboarding-choice button:hover{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.045)}
+.onboarding-choice button.active{border-color:color-mix(in srgb,var(--accent) 65%,transparent);background:color-mix(in srgb,var(--accent) 7.5%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 12%,transparent),0 8px 25px color-mix(in srgb,var(--accent) 5%,transparent)}
+.onboarding-summary>div{border-color:rgba(255,255,255,.075);background:rgba(255,255,255,.025);border-radius:14px}
+.onboarding-footer{border-top-color:rgba(255,255,255,.07)}
+
+/* Accessibility / interaction polish */
+button,input,select,textarea{font-family:inherit}
+button{touch-action:manipulation}
+button:disabled{transform:none!important}
+@media (hover:none){.day-card:hover,.icon-btn:hover,.btn-primary:hover,.set-btn:hover:not(:disabled){transform:none;box-shadow:inherit}}
+
+/* Tablet */
+@media(max-width:860px){
+  .dashboard-hero{grid-template-columns:1fr}
+  .hero-main,.hero-stats{min-height:auto}
+  .hero-stats{grid-template-columns:1fr auto 1fr}
+  .plan-switcher{max-width:52vw;overflow-x:auto;scrollbar-width:none}
+  .plan-switcher::-webkit-scrollbar{display:none}
+}
+
+/* Phone */
+@media(max-width:700px){
+  .header{padding:10px 12px 12px}
+  .header-top{gap:9px}
+  .brand{flex:1;min-width:0}
+  .brand-text{font-size:.93rem}
+  .brand-tag{font-size:.55rem}
+  .brand-icon{width:36px;height:36px;border-radius:11px;font-size:1.05rem}
+  .header-actions{gap:5px}
+  .icon-btn{width:38px;height:38px;border-radius:11px}
+  .icon-btn.primary{width:38px;min-width:38px;height:38px;border-radius:11px}
+  .plan-switcher{order:3;width:100%;max-width:none;margin:3px 0 0;justify-content:flex-start}
+  .plan-btn{flex:0 0 auto;padding:7px 13px}
+  .progress-wrap{margin-top:9px}
+  .progress-labels{font-size:.59rem}
+  .dashboard-hero{width:calc(100% - 20px);margin:14px auto 8px;gap:10px}
+  .hero-main{padding:23px 21px;border-radius:19px}
+  .hero-main h1{font-size:clamp(1.85rem,8vw,2.45rem);letter-spacing:-1.9px;margin-top:12px}
+  .hero-main p{font-size:.8rem}
+  .hero-actions{margin-top:19px}
+  .hero-cta{width:100%;min-height:44px}
+  .hero-stats{padding:20px;border-radius:19px}
+  .hero-stat strong{font-size:2rem}
+  .main{padding:14px 10px 30px}
+  .phase-tabs{margin-bottom:10px}
+  .phase-tab{padding:8px 13px;font-size:.67rem}
+  .day-card{padding:16px;border-radius:16px}
+  .sets-grid{grid-template-columns:1fr 1fr}
+  .set-btn{min-height:44px}
+  .modal-overlay{padding:8px}
+  .modal{max-height:94vh;border-radius:18px}
+  .modal-body{padding:17px}
+  .modal-footer{padding:12px 17px}
+  .settings-modal{max-height:94vh}
+  .settings-modal .modal-body{padding:16px}
+  .exercise-manager-actions{grid-template-columns:1fr}
+  .toast-container{left:10px;right:10px;bottom:10px}
+  .toast{max-width:none;width:100%}
+}
+
+@media(max-width:380px){
+  .brand-text{font-size:.86rem}
+  .brand-tag{display:none}
+  .header-actions .icon-btn{width:36px;height:36px}
+  .header-actions .icon-btn.primary{width:36px;min-width:36px;height:36px}
+  .hero-main{padding:20px 18px}
+  .hero-stats{padding:18px}
+  .hero-stat strong{font-size:1.8rem}
+  .sets-grid{grid-template-columns:1fr}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   DESIGNER POLISH — elevated cards + intentional hover glow
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --glass:rgba(255,255,255,.045);
+  --glass-strong:rgba(255,255,255,.075);
+  --line-soft:rgba(255,255,255,.085);
+  --glow-accent:color-mix(in srgb,var(--accent) 24%,transparent);
+  --glow-blue:color-mix(in srgb,var(--accent) 20%,transparent);
+  --glow-purple:color-mix(in srgb,var(--accent) 18%,transparent);
+}
+
+/* shared premium surface */
+.day-card,.stat-card,.chart-card,.setting-group,.exercise-manager,.modal,.onboarding-card,.onboarding-side,
+.hero-main,.hero-stats,.phase-panel,.recovery-card,.pr-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.018));
+  border-color:var(--line-soft);
+  box-shadow:0 18px 45px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+/* subtle top sheen */
+.day-card::after,.stat-card::after,.chart-card::after,.setting-group::after,.exercise-manager::after,
+.hero-main::before,.hero-stats::before{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(120deg,rgba(255,255,255,.045),transparent 28%,transparent 72%,rgba(255,255,255,.018));
+  opacity:.65;
+}
+
+.day-card,.stat-card,.chart-card,.setting-group,.exercise-manager,.hero-main,.hero-stats{position:relative;overflow:hidden}
+
+/* Restore the satisfying hover glow everywhere it matters */
+.day-card:hover{
+  transform:translateY(-4px);
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent);
+  box-shadow:0 18px 45px rgba(0,0,0,.28),0 0 28px color-mix(in srgb,var(--accent) 10%,transparent),inset 0 1px 0 rgba(255,255,255,.07);
+}
+.day-card.current:hover{box-shadow:0 20px 48px rgba(0,0,0,.30),0 0 34px var(--glow-accent),inset 0 1px 0 rgba(255,255,255,.08)}
+
+.icon-btn,.plan-btn,.phase-tab,.btn,.hero-cta,.hero-ghost,.day-check,.set-btn,.modal-close,.toggle,
+.exercise-select,input,select,textarea{
+  transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease,color .18s ease,filter .18s ease;
+}
+.icon-btn:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 55%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--accent) 20%,transparent),0 8px 22px rgba(0,0,0,.20)}
+.plan-btn:hover:not(.active){color:var(--fg);background:rgba(255,255,255,.06);box-shadow:0 0 18px rgba(255,255,255,.055)}
+.plan-btn.active{box-shadow:0 0 22px color-mix(in srgb,var(--accent) 24%,transparent),0 5px 16px rgba(0,0,0,.18)}
+.phase-tab:hover:not(.active){transform:translateY(-1px);border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--accent) 12%,transparent)}
+.phase-tab.active{box-shadow:0 0 26px color-mix(in srgb,var(--accent) 22%,transparent),0 7px 18px rgba(0,0,0,.18)}
+
+.btn-secondary:hover,.btn-ghost:hover,.modal-close:hover{
+  transform:translateY(-1px);border-color:color-mix(in srgb,var(--accent) 45%,transparent);box-shadow:0 0 20px color-mix(in srgb,var(--accent) 10%,transparent),0 6px 16px rgba(0,0,0,.16)
+}
+.btn-primary:hover,.hero-cta:hover{transform:translateY(-2px) scale(1.01);filter:brightness(1.06);box-shadow:0 10px 30px color-mix(in srgb,var(--accent) 30%,transparent),0 0 24px color-mix(in srgb,var(--accent) 18%,transparent)}
+.btn-danger:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(248,81,73,.24),0 0 20px rgba(248,81,73,.16)}
+
+.hero-main,.hero-stats{box-shadow:0 24px 60px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.045)}
+.hero-main:hover,.hero-stats:hover{border-color:color-mix(in srgb,var(--accent) 20%,transparent);box-shadow:0 26px 65px rgba(0,0,0,.25),0 0 36px color-mix(in srgb,var(--accent) 7%,transparent),inset 0 1px 0 rgba(255,255,255,.055)}
+.hero-main::after{opacity:.16;filter:blur(18px);transition:opacity .25s ease,transform .35s ease}
+.hero-main:hover::after{opacity:.25;transform:scale(1.12)}
+
+/* Inputs should feel like designed components, not browser controls */
+select{color-scheme:dark;}
+select option,select optgroup{background:#151b24;color:#eef3f8;}
+input:not([type="checkbox"]),select,textarea,.exercise-select{
+  background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  border-color:rgba(255,255,255,.10);
+}
+input:not([type="checkbox"]):hover,select:hover,textarea:hover,.exercise-select:hover{
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--accent) 7%,transparent)
+}
+input:not([type="checkbox"]):focus,select:focus,textarea:focus,.exercise-select:focus{
+  border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 10%,transparent),0 0 24px color-mix(in srgb,var(--accent) 12%,transparent)
+}
+
+
+/* Dark native dropdowns: keep browser menus consistent with the app */
+.onboarding-field select,.builder-field select,.exercise-select{
+  color-scheme:dark;
+  appearance:auto;
+}
+/* Settings become a sequence of tactile rows */
+.setting-row{padding:15px 12px;border-radius:12px;border-bottom:1px solid rgba(255,255,255,.055)}
+.setting-row:hover{background:rgba(255,255,255,.028);box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}
+.setting-row .toggle:hover{box-shadow:0 0 18px color-mix(in srgb,var(--accent) 18%,transparent)}
+
+/* Progress / stat numerals get the same visual language as the hero */
+.hero-stat-value,.stat-value{letter-spacing:-1.6px;text-shadow:0 0 22px rgba(255,255,255,.055)}
+.progress-bar,.progress-track{box-shadow:inset 0 1px 3px rgba(0,0,0,.30)}
+.progress-bar > *, .progress-fill{box-shadow:0 0 16px color-mix(in srgb,var(--accent) 24%,transparent)}
+
+/* Better mobile cards */
+@media(max-width:700px){
+  .dashboard-hero{grid-template-columns:1fr;gap:12px;margin-top:14px}
+  .hero-main{padding:22px 20px;border-radius:20px}
+  .hero-stats{padding:18px;border-radius:20px}
+  .day-card{border-radius:18px;padding:15px}
+  .day-card:hover{transform:none;box-shadow:0 12px 30px rgba(0,0,0,.22),0 0 20px color-mix(in srgb,var(--accent) 8%,transparent)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+
+.build-spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,.25);border-top-color:currentColor;border-radius:50%;animation:buildSpin .65s linear infinite;vertical-align:-2px;margin-right:7px;}
+@keyframes buildSpin{to{transform:rotate(360deg)}}
+
+/* AI Coach — additive UI; inherits the existing accent system */
+.ai-coach-fab{position:fixed;right:22px;bottom:22px;z-index:90;border:1px solid color-mix(in srgb,var(--accent) 55%,var(--border));background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 65%,#fff));color:#0d1117;border-radius:999px;padding:11px 16px;font-weight:900;font-size:.78rem;box-shadow:0 10px 34px color-mix(in srgb,var(--accent) 24%,transparent),0 4px 16px rgba(0,0,0,.28);cursor:pointer;transition:var(--trans)}
+.ai-coach-fab:hover{transform:translateY(-2px);box-shadow:0 14px 38px color-mix(in srgb,var(--accent) 30%,transparent),0 6px 18px rgba(0,0,0,.3)}
+.ai-coach-fab:active{transform:scale(.98)}
+.ai-coach-modal{width:min(720px,calc(100% - 24px));max-height:min(88vh,760px);display:flex;flex-direction:column}
+.ai-chat-body{display:flex;flex-direction:column;min-height:0;flex:1}
+.ai-chat-messages{padding:16px;display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:220px;max-height:52vh}
+.ai-msg{max-width:88%;padding:10px 12px;border-radius:14px;font-size:.82rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.ai-msg.user{align-self:flex-end;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 24%,var(--border))}
+.ai-msg.assistant{align-self:flex-start;background:rgba(255,255,255,.035);border:1px solid var(--border);color:var(--fg)}
+.ai-msg.system{align-self:center;background:rgba(255,255,255,.025);border:1px dashed var(--border);color:var(--fg-muted);font-size:.72rem}
+.ai-chat-composer{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.ai-chat-composer textarea{min-height:44px;max-height:120px;resize:vertical}
+.ai-status{padding:0 16px 10px;color:var(--fg-muted);font-size:.7rem;min-height:18px}
+.ai-settings-box{margin:14px 0;padding:14px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.025);display:grid;gap:10px}
+.ai-settings-box .setting-name{color:var(--fg)}
+.ai-settings-help{font-size:.68rem;color:var(--fg-muted);line-height:1.5}
+.ai-settings-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:700px){.ai-coach-fab{right:14px;bottom:14px}.ai-chat-messages{max-height:48vh}.ai-chat-composer{grid-template-columns:1fr}.ai-chat-composer .btn{width:100%}}
+@media print{.ai-coach-fab{display:none!important}}
+
+</style>
+
+<style id="onboarding-build-fixes">
+.onboarding-goal-error{
+  margin-top:12px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--danger) 55%,transparent);
+  background:color-mix(in srgb,var(--danger) 10%,transparent);color:var(--danger);border-radius:12px;font-size:.84rem;line-height:1.45;
+}
+.input-error{border-color:var(--danger)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--danger) 12%,transparent),0 0 22px color-mix(in srgb,var(--danger) 16%,transparent)!important}
+.build-spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:buildSpin .65s linear infinite;vertical-align:-2px;margin-right:7px}
+@keyframes buildSpin{to{transform:rotate(360deg)}}
+
+/* Exercise accent system */
+.accent-picker{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:2px}.accent-swatch{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.16);background:var(--swatch);cursor:pointer;box-shadow:0 0 0 0 transparent,0 5px 16px color-mix(in srgb,var(--swatch) 20%,transparent);transition:.18s ease}.accent-swatch:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 0 0 4px color-mix(in srgb,var(--swatch) 15%,transparent),0 0 22px color-mix(in srgb,var(--swatch) 38%,transparent)}.accent-swatch.active{border-color:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--swatch) 30%,transparent),0 0 24px color-mix(in srgb,var(--swatch) 50%,transparent)}.accent-picker.compact .accent-swatch{width:26px;height:26px}.exercise-manager-accent{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07)}.exercise-manager-accent label{display:block;font-size:.68rem;font-weight:800;color:var(--fg-muted);margin-bottom:8px}.accent-inline{display:flex;align-items:center;gap:10px}.accent-picker.disabled{opacity:.45;pointer-events:none}
+</style>
+
+<style id="dynamic-accent-glow-fix">
+/* Dynamic exercise accent: every glow follows the currently selected exercise. */
+:root{
+  --accent-soft:color-mix(in srgb,var(--accent) 10%,transparent);
+  --accent-mid:color-mix(in srgb,var(--accent) 18%,transparent);
+  --accent-strong:color-mix(in srgb,var(--accent) 32%,transparent);
+  --accent-border:color-mix(in srgb,var(--accent) 55%,transparent);
+}
+
+.day-card:hover{
+  border-color:var(--accent-border);
+  box-shadow:0 18px 45px rgba(0,0,0,.28),0 0 28px var(--accent-soft),inset 0 1px 0 rgba(255,255,255,.07);
+}
+.day-card.current:hover{
+  box-shadow:0 20px 48px rgba(0,0,0,.30),0 0 34px var(--accent-strong),inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.icon-btn:hover{
+  border-color:var(--accent-border);
+  box-shadow:0 0 22px var(--accent-mid),0 8px 22px rgba(0,0,0,.20);
+}
+.plan-btn.active{
+  box-shadow:0 0 22px var(--accent-mid),0 5px 16px rgba(0,0,0,.18);
+}
+.phase-tab:hover:not(.active){
+  border-color:var(--accent-border);
+  background:var(--accent-soft);
+  box-shadow:0 0 22px var(--accent-soft);
+}
+.phase-tab.active{
+  box-shadow:0 0 26px var(--accent-mid),0 7px 18px rgba(0,0,0,.18);
+}
+.btn-secondary:hover,.btn-ghost:hover,.modal-close:hover{
+  border-color:var(--accent-border);
+  box-shadow:0 0 20px var(--accent-soft),0 6px 16px rgba(0,0,0,.16);
+}
+.btn-primary:hover,.hero-cta:hover{
+  box-shadow:0 10px 30px var(--accent-strong),0 0 24px var(--accent-mid);
+}
+
+.hero-main:hover,.hero-stats:hover{
+  border-color:color-mix(in srgb,var(--accent) 20%,transparent);
+  box-shadow:0 26px 65px rgba(0,0,0,.25),0 0 36px var(--accent-soft),inset 0 1px 0 rgba(255,255,255,.055);
+}
+
+input:not([type="checkbox"]):hover,select:hover,textarea:hover,.exercise-select:hover{
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent);
+  box-shadow:0 0 18px var(--accent-soft);
+}
+input:not([type="checkbox"]):focus,select:focus,textarea:focus,.exercise-select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft),0 0 24px var(--accent-mid);
+}
+.setting-row:hover{
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 55%,transparent);
+}
+.setting-row .toggle:hover{box-shadow:0 0 18px var(--accent-mid)}
+.progress-bar > *, .progress-fill{box-shadow:0 0 16px var(--accent-mid)}
+
+/* Keep the hero's ambient orb tied to the selected exercise too. */
+.hero-main::after{background:var(--accent)}
+
+@media (prefers-reduced-motion:reduce){
+  .day-card,.icon-btn,.plan-btn,.phase-tab,.btn,.hero-cta,.hero-ghost,input,select,textarea{transition:none!important}
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-top">
+      <a href="#" class="brand" aria-label="Strength Protocol Home">
+        <div class="brand-icon" aria-hidden="true">💪</div>
+        <div>
+          <div class="brand-text">Strength Protocol</div>
+          <div class="brand-tag"><span id="currentPlanTag">Pushups</span> • <span id="currentGoalTag">20 → 50</span></div>
+        </div>
+      </a>
+      <nav class="plan-switcher" id="planSwitcher" role="tablist" aria-label="Select training plan"></nav>
+      <div class="header-actions">
+        <button type="button" class="icon-btn" id="btnStats" aria-label="Statistics" title="Statistics (S)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg></button>
+        <button type="button" class="icon-btn" id="btnSettings" aria-label="Settings" title="Settings (⌘/,)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+        <button type="button" class="icon-btn primary" id="btnCreateProgram" aria-label="Create Custom Training Program" title="Add exercise">+</button>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Overall progress">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-labels">
+        <span>Day <span id="currentDay">1</span> / 30</span>
+        <span><span id="completedCount">0</span> completed</span>
+        <span><span id="totalReps">0</span> total reps</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="dashboard-hero" id="dashboardHero" aria-label="Program overview">
+    <div class="hero-main">
+      <div class="hero-greeting" id="heroGreeting">Welcome to your training dashboard.</div>
+      <div class="hero-eyebrow"><span class="live-dot"></span><span id="heroPhase">FOUNDATION</span><span class="hero-separator">•</span><span id="heroDayLabel">DAY 1</span></div>
+      <h1 id="heroTitle">Build your strength.</h1>
+      <p id="heroSubtitle">A calculated progression from your current ability to your target.</p>
+      <div class="hero-actions">
+        <button type="button" class="hero-cta" id="heroStartBtn">Start today <span>→</span></button>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="hero-stat-label">CURRENT</span><strong id="heroCurrent">20</strong><small>reps</small></div>
+      <div class="hero-arrow">→</div>
+      <div class="hero-stat"><span class="hero-stat-label">GOAL</span><strong id="heroGoal">50</strong><small>reps</small></div>
+      <div class="hero-stat progress-stat"><span class="hero-stat-label">PROGRESS</span><strong id="heroProgress">0%</strong><div class="hero-mini-bar"><i id="heroProgressFill"></i></div></div>
+    </div>
+  </section>
+
+  <main class="main" id="main">
+    <nav class="phase-tabs" id="phaseTabs" role="tablist" aria-label="Training phases"></nav>
+    <div id="dayCards"></div>
+    <div class="empty-state" id="emptyState" hidden>
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">No days in this phase</div>
+      <div class="empty-desc">Add a custom day or check another phase</div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Strength Protocol • Your training, your progression • Data stored locally in your browser</p>
+  </footer>
+</div>
+
+<!-- Modals (same as before) -->
+
+<div class="onboarding-overlay" id="onboardingOverlay" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" hidden>
+  <div class="onboarding-shell">
+    <aside class="onboarding-aside">
+      <div>
+        <div class="onboarding-logo">💪</div>
+        <h1 id="onboardingAsideTitle">Welcome to your strength journey.</h1>
+        <p id="onboardingAsideText">Let's build a plan around your current ability, your target, and the amount of training you can realistically commit to.</p>
+      </div>
+      <div class="onboarding-steps" aria-hidden="true">
+        <i class="onboarding-step-dot active"></i><i class="onboarding-step-dot"></i><i class="onboarding-step-dot"></i>
+      </div>
+    </aside>
+    <section class="onboarding-main">
+      <div class="onboarding-kicker" id="onboardingKicker">WELCOME</div>
+      <h2 id="onboardingTitle">First, let's make this yours.</h2>
+      <p class="lead" id="onboardingLead">Tell me what you'd like to be called and we'll personalize the dashboard.</p>
+      <div class="onboarding-form">
+        <div class="onboarding-step-panel" data-onboarding-step="1">
+          <div class="onboarding-grid">
+            <div class="onboarding-field full"><label for="onboardName">Your name</label><input id="onboardName" type="text" maxlength="40" autocomplete="name" placeholder="e.g. Alex"></div>
+          </div>
+          <div class="onboarding-note" style="margin-top:13px">Your name is only used to personalize the dashboard on this device.</div>
+        </div>
+        <div class="onboarding-step-panel" data-onboarding-step="2" hidden>
+          <div class="onboarding-grid">
+            <div class="onboarding-field"><label for="onboardAge">Age</label><input id="onboardAge" type="number" min="10" max="100" inputmode="numeric" placeholder="Optional"></div>
+            <div class="onboarding-field"><label for="onboardHeight">Height (cm)</label><input id="onboardHeight" type="number" min="80" max="250" inputmode="decimal" placeholder="Optional"></div>
+            <div class="onboarding-field"><label for="onboardWeight">Weight (kg)</label><input id="onboardWeight" type="number" min="20" max="300" inputmode="decimal" placeholder="Optional"></div>
+          </div>
+          <div class="onboarding-note" style="margin-top:13px">These details are optional and are used for your profile only. They don't determine your rep targets.</div>
+        </div>
+        <div class="onboarding-step-panel" data-onboarding-step="3" hidden>
+          <div class="onboarding-grid">
+            <div class="onboarding-field full"><label for="onboardExercise">What do you want to progress?</label><select id="onboardExercise"><option value="pushup">Pushups</option><option value="pullup">Pullups</option><option value="custom">Other / Custom</option></select></div>
+            <div class="onboarding-field full" id="onboardCustomWrap" hidden><label for="onboardCustomName">Exercise name</label><input id="onboardCustomName" maxlength="32" placeholder="e.g. Dips, Squats, Plank"></div>
+            <div class="onboarding-field"><label for="onboardCurrent">Initial max reps</label><input id="onboardCurrent" type="number" min="1" max="500" inputmode="numeric" placeholder="20"></div>
+            <div class="onboarding-field"><label for="onboardGoal">Goal reps</label><input id="onboardGoal" type="number" min="2" max="500" inputmode="numeric" placeholder="50"></div>
+            <div class="onboarding-field"><label for="onboardFrequency">Training days / week</label><select id="onboardFrequency"><option value="3">3 days</option><option value="4" selected>4 days</option><option value="5">5 days</option><option value="6">6 days</option></select></div>
+            <div class="onboarding-field"><label for="onboardDuration">Program duration</label><select id="onboardDuration"><option value="21">21 days</option><option value="30" selected>30 days</option><option value="42">42 days</option><option value="56">56 days</option><option value="70">70 days</option></select></div>
+            <div class="onboarding-field full"><label>Preferred accent</label><div class="accent-picker" id="onboardAccentPicker" role="radiogroup" aria-label="Preferred exercise accent"></div><input type="hidden" id="onboardAccent" value="var(--accent)"></div>
+          </div>
+          <div class="onboarding-summary"><div><b id="onboardPreviewCurrent">20</b><span>initial reps</span></div><div><b id="onboardPreviewGoal">50</b><span>goal reps</span></div><div><b id="onboardPreviewDuration">30d</b><span>program length</span></div></div>
+          <div id="onboardingGoalError" class="onboarding-goal-error" role="alert" hidden></div>
+        </div>
+      </div>
+      <div class="onboarding-footer">
+        <button class="onboarding-back" id="onboardingBack" type="button" hidden>← Back</button>
+        <span style="flex:1"></span>
+        <button class="btn btn-primary onboarding-next" id="onboardingNext" type="button">Continue →</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalStats" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="statsTitle">Statistics</h2>
+      <button type="button" class="modal-close" data-close-modal="stats" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-wrap">
+        <canvas class="chart-canvas" id="chartVolume" aria-label="Volume progression chart"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <canvas class="chart-canvas" id="chartConsistency" aria-label="Consistency heatmap"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSettings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal settings-modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="settingsTitle">Settings</h2>
+      <button type="button" class="modal-close" data-close-modal="settings" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Sound Notifications</div>
+          <div class="setting-desc">Play sound when rest timer completes</div>
+        </div>
+        <button type="button" class="toggle" id="toggleSound" role="switch" aria-checked="true" aria-label="Sound notifications"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Haptic Feedback</div>
+          <div class="setting-desc">Vibrate on timer complete (mobile)</div>
+        </div>
+        <button type="button" class="toggle" id="toggleHaptic" role="switch" aria-checked="true" aria-label="Haptic feedback"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Auto-Start Rest Timer</div>
+          <div class="setting-desc">Begin rest countdown immediately after ending a set</div>
+        </div>
+        <button type="button" class="toggle" id="toggleAutoRest" role="switch" aria-checked="true" aria-label="Auto-start rest timer"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Keep Screen Awake</div>
+          <div class="setting-desc">Prevent screen sleep during active workout</div>
+        </div>
+        <button type="button" class="toggle" id="toggleWakeLock" role="switch" aria-checked="false" aria-label="Keep screen awake"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Compact Mode</div>
+          <div class="setting-desc">Smaller cards, more days visible</div>
+        </div>
+        <button type="button" class="toggle" id="toggleCompact" role="switch" aria-checked="false" aria-label="Compact mode"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Show RIR Guidance</div>
+          <div class="setting-desc">Display Reps In Reserve targets per day</div>
+        </div>
+        <button type="button" class="toggle" id="toggleRIR" role="switch" aria-checked="true" aria-label="Show RIR guidance"></button>
+      </div>
+      <hr style="border-color:var(--border);margin:16px 0">
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Export Current Plan</div>
+          <div class="setting-desc">Download your progress as JSON backup</div>
+        </div>
+        <button type="button" class="btn btn-secondary" id="btnExport" style="padding:8px 16px;font-size:.8rem">Export</button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Import Data</div>
+          <div class="setting-desc">Restore from a previous backup file</div>
+        </div>
+        <button type="button" class="btn btn-secondary" id="btnImport" style="padding:8px 16px;font-size:.8rem">Import</button>
+      </div>
+      <div class="ai-settings-box" aria-labelledby="aiSettingsTitle">
+        <div class="setting-info">
+          <div class="setting-name" id="aiSettingsTitle">AI Coach</div>
+          <div class="setting-desc">Optional. Connect your own OpenRouter API key to use the AI Coach. Your key stays in this browser.</div>
+        </div>
+        <input id="aiApiKey" class="comment-input" type="password" autocomplete="off" placeholder="OpenRouter API key (optional)" aria-label="OpenRouter API key">
+        <input id="aiModel" class="comment-input" type="text" autocomplete="off" value="openai/gpt-4o-mini" placeholder="Model, e.g. openai/gpt-4o-mini" aria-label="AI model">
+        <label class="setting-desc" for="aiWorkoutMode" style="margin-top:2px">Workout adaptation mode</label>
+        <select id="aiWorkoutMode" class="comment-input" aria-label="Workout adaptation mode">
+          <option value="hardcoded">Hardcoded — keep the original program</option>
+          <option value="ai">AI — remake future workouts from notes</option>
+        </select>
+        <div class="ai-settings-help">The core app works without AI. Do not paste a key you are not comfortable storing locally.</div>
+        <div class="ai-settings-actions">
+          <button type="button" class="btn btn-secondary" id="btnSaveAISettings" style="padding:8px 16px;font-size:.8rem">Save AI settings</button>
+          <button type="button" class="btn btn-secondary" id="btnClearAIKey" style="padding:8px 16px;font-size:.8rem">Clear key</button>
+        </div>
+      </div>
+      <div class="exercise-manager" id="exerciseManager">
+        <div class="exercise-manager-title">Edit / Remove Exercise</div>
+        <select class="exercise-select" id="exerciseManagerSelect" aria-label="Choose exercise to edit or remove"></select>
+        <div class="exercise-manager-actions">
+          <button type="button" class="btn btn-secondary" id="btnEditExercise">Edit exercise</button>
+          <button type="button" class="btn btn-danger" id="btnRemoveExercise">Remove exercise</button>
+        </div>
+        <div class="exercise-manager-accent"><label for="exerciseAccentSelect">Exercise accent</label><div class="accent-inline"><div class="accent-picker compact" id="exerciseAccentPicker" role="radiogroup" aria-label="Exercise accent"></div><input type="hidden" id="exerciseAccentSelect"></div></div>
+        <div class="setting-desc">Edit the starting reps and goal reps, or remove the selected exercise. Changes regenerate its progression.</div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Reset Current Plan</div>
+          <div class="setting-desc">Permanently delete all workout data for this plan</div>
+        </div>
+        <button type="button" class="btn btn-danger" id="btnReset" style="padding:8px 16px;font-size:.8rem">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<style id="reset-flow-ui">
+.reset-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+.reset-choice-card{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.025);padding:18px;text-align:left;color:var(--fg);cursor:pointer;transition:.18s ease;min-height:150px}
+.reset-choice-card:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 0 28px color-mix(in srgb,var(--accent) 16%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent)}
+.reset-choice-card strong{display:block;font-size:1rem;margin-bottom:7px}.reset-choice-card span{display:block;color:var(--fg-muted);font-size:.75rem;line-height:1.55}
+.reset-choice-icon{font-size:1.4rem;margin-bottom:12px}.reset-select-wrap{margin-top:18px}.reset-select-wrap label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--fg-muted);font-weight:800;margin-bottom:7px}
+.reset-select-wrap select{width:100%;height:46px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2,#161b22);color:var(--fg);padding:0 12px;font:inherit;outline:none}
+.reset-confirm-box{margin-top:18px;padding:14px;border-radius:14px;background:color-mix(in srgb,var(--warning,#f2cc60) 7%,transparent);border:1px solid color-mix(in srgb,var(--warning,#f2cc60) 22%,transparent);color:var(--fg-muted);font-size:.78rem;line-height:1.55}
+.reset-confirm-box b{color:var(--fg)}
+@media(max-width:600px){.reset-choice-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="modal-overlay" id="modalResetChoice" role="dialog" aria-modal="true" aria-labelledby="resetChoiceTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-kicker">RESET</div><h2 class="modal-title" id="resetChoiceTitle">What do you want to reset?</h2><p class="modal-subtitle">Choose whether to start the entire app over or reset one exercise.</p></div>
+      <button type="button" class="modal-close" data-close-modal="resetChoice" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="reset-choice-grid">
+        <button type="button" class="reset-choice-card" id="btnFullResetChoice"><div class="reset-choice-icon">↻</div><strong>Full reset</strong><span>Erase your profile, exercises and workout progress, then return to the welcome setup.</span></button>
+        <button type="button" class="reset-choice-card" id="btnExerciseResetChoice"><div class="reset-choice-icon">◌</div><strong>Exercise reset</strong><span>Keep everything else and reset the workout history for one exercise.</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalExerciseReset" role="dialog" aria-modal="true" aria-labelledby="exerciseResetTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-kicker">EXERCISE RESET</div><h2 class="modal-title" id="exerciseResetTitle">Choose an exercise</h2><p class="modal-subtitle">Only this exercise's workout progress will be reset.</p></div>
+      <button type="button" class="modal-close" data-close-modal="exerciseReset" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="reset-select-wrap"><label for="resetExerciseSelect">Exercise</label><select id="resetExerciseSelect"></select></div>
+      <div class="onboarding-note" style="margin-top:14px">Your profile, other exercises and their progress will stay untouched.</div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-close-modal="exerciseReset">Cancel</button><button type="button" class="btn btn-primary" id="btnContinueExerciseReset">Continue →</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalResetConfirm" role="dialog" aria-modal="true" aria-labelledby="resetConfirmTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-kicker">CONFIRM RESET</div><h2 class="modal-title" id="resetConfirmTitle">Are you sure?</h2><p class="modal-subtitle" id="resetConfirmSubtitle">This action cannot be undone.</p></div>
+      <button type="button" class="modal-close" data-close-modal="resetConfirm" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="reset-confirm-box" id="resetConfirmMessage"></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-close-modal="resetConfirm">Cancel</button><button type="button" class="btn btn-danger" id="btnConfirmReset">Confirm reset</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay custom-program-overlay" id="modalCreateProgram" role="dialog" aria-modal="true" aria-labelledby="createProgramTitle">
+  <div class="modal custom-program-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-kicker">PROGRAM BUILDER</div>
+        <h2 class="modal-title" id="createProgramTitle">Create your progression</h2>
+        <p class="modal-subtitle">Tell us where you are and where you want to go. The app builds the training path.</p>
+      </div>
+      <button type="button" class="modal-close" data-close-modal="createProgram" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body program-builder">
+      <div class="builder-grid">
+        <div class="builder-fields">
+          <label class="builder-field full"><span>Exercise type</span><select id="programExerciseType" class="comment-input"><option value="pushup">Pushups</option><option value="pullup">Pullups</option><option value="custom" selected>Other / Custom</option></select></label>
+          <label class="builder-field full" id="programCustomNameWrap"><span>Exercise name</span><input id="programName" class="comment-input" maxlength="32" placeholder="e.g. Dips, Squats"></label>
+          <label class="builder-field full"><span>Accent</span><div class="accent-picker compact" id="programAccentPicker" role="radiogroup" aria-label="Exercise accent"></div><input type="hidden" id="programAccent"></label>
+          <label class="builder-field"><span>Current max reps</span><input id="programCurrent" type="number" class="comment-input" min="1" max="500" value="10" inputmode="numeric"></label>
+          <label class="builder-field"><span>Goal reps</span><input id="programGoal" type="number" class="comment-input" min="2" max="500" value="30" inputmode="numeric"></label>
+          <label class="builder-field"><span>Days / week</span><select id="programFrequency" class="comment-input"><option value="3">3 days</option><option value="4" selected>4 days</option><option value="5">5 days</option><option value="6">6 days</option></select></label>
+          <label class="builder-field"><span>Program length</span><select id="programDuration" class="comment-input"><option value="21">21 days</option><option value="30" selected>30 days</option><option value="42">42 days</option><option value="56">56 days</option></select></label>
+          <label class="builder-field full"><span>Optional note</span><input id="programNote" class="comment-input" maxlength="70" placeholder="e.g. strict form, no kipping"></label>
+        </div>
+        <div class="builder-preview" id="programPreview">
+          <div class="preview-top"><span>LIVE PREVIEW</span><span class="preview-chip" id="previewDaysChip">30 DAYS</span></div>
+          <div class="preview-goal"><strong id="previewCurrent">10</strong><span>→</span><strong id="previewGoal">30</strong></div>
+          <div class="preview-label">calculated progression</div>
+          <div class="preview-phases" id="previewPhases"></div>
+          <div class="preview-note"><span>✦</span><span id="previewMessage">4 training days per week with recovery built in.</span></div>
+        </div>
+      </div>
+      <div class="builder-principles">
+        <div><b>01</b><span>Progressive overload</span><small>Volume and reps rise gradually.</small></div>
+        <div><b>02</b><span>Recovery</span><small>Rest days prevent back-to-back fatigue.</small></div>
+        <div><b>03</b><span>Testing</span><small>Periodic checkpoints recalibrate the plan.</small></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-close-modal="createProgram">Cancel</button>
+      <button type="button" class="btn btn-primary builder-submit" id="btnGenerateProgram">Generate program <span>→</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAddDay" role="dialog" aria-modal="true" aria-labelledby="addDayTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="addDayTitle">Add Custom Day</h2>
+      <button type="button" class="modal-close" data-close-modal="addDay" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <label class="comment-label" for="customDayNum">Day Number (1-60)</label>
+          <input type="number" id="customDayNum" min="1" max="60" class="comment-input" style="min-height:44px" placeholder="e.g., 31 for extra day">
+        </div>
+        <div>
+          <label class="comment-label" for="customPhase">Phase</label>
+          <select id="customPhase" class="comment-input" style="min-height:44px;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b949e%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 12px center;padding-right:36px">
+            <option value="foundation">Foundation</option>
+            <option value="build">Build</option>
+            <option value="peak">Peak</option>
+            <option value="taper">Taper &amp; Test</option>
+          </select>
+        </div>
+        <div>
+          <label class="comment-label" for="customWorkout">Workout Description</label>
+          <input type="text" id="customWorkout" class="comment-input" style="min-height:44px" placeholder="e.g., 5 × 15 (rest 60s)">
+        </div>
+        <div>
+          <label class="comment-label" for="customAccessory">Accessory / Notes</label>
+          <input type="text" id="customAccessory" class="comment-input" style="min-height:44px" placeholder="e.g., Diamond pushups 3×8">
+        </div>
+        <div>
+          <label class="comment-label" for="customRIR">Target RIR</label>
+          <input type="text" id="customRIR" class="comment-input" style="min-height:44px" placeholder="e.g., 2–3">
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" id="customIsTest" style="width:18px;height:18px;accent-color:var(--accent)">
+          <span>Test Day (max effort)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" id="customIsGTG" style="width:18px;height:18px;accent-color:var(--accent)">
+          <span>Grease-the-Groove</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" id="customIsDeload" style="width:18px;height:18px;accent-color:var(--accent)">
+          <span>Deload Week</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" id="customIsRest" style="width:18px;height:18px;accent-color:var(--accent)">
+          <span>Rest Day</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" id="customIsNegative" style="width:18px;height:18px;accent-color:var(--purple)">
+          <span>Includes Negatives</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-close-modal="addDay">Cancel</button>
+      <button type="button" class="btn btn-primary" id="btnSaveCustomDay">Add Day</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<audio id="timerSound" preload="auto">
+  <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=" type="audio/wav">
+</audio>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// PLAN DEFINITIONS
+// ═══════════════════════════════════════════════════════════════
+
+const PLANS = {
+  pushup: {
+    id: "pushup",
+    name: "Pushups",
+    emoji: "🤸",
+    goal: "20 → 50",
+    color: "#f78166",
+    phases: [
+      {id:"foundation",name:"Foundation",color:"#58a6ff",days:10},
+      {id:"build",name:"Build",color:"#a371f7",days:10},
+      {id:"peak",name:"Peak",color:"#f78166",days:8},
+      {id:"taper",name:"Taper",color:"#d29922",days:2},
+    ],
+    defaultPlan: [
+      {day:1,phase:"foundation",workout:"5 × 12",rest:90,accessory:"—",notes:"Establish baseline; strict tempo 2-1-X",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:2,phase:"foundation",workout:"REST",rest:0,accessory:"Band pull-aparts 2×15",notes:"Active recovery; sleep 8+ hrs",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:3,phase:"foundation",workout:"5 × 12",rest:90,accessory:"—",notes:"Focus: perfect lockout + controlled descent",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:4,phase:"foundation",workout:"5 × 13",rest:90,accessory:"Plank 2×30s",notes:"Slight rep increase; maintain tempo",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:5,phase:"foundation",workout:"REST",rest:0,accessory:"Band pull-aparts 2×15 + scap pushups 2×10",notes:"Recovery + scapular health",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:6,phase:"foundation",workout:"6 × 12",rest:75,accessory:"Hollow hold 2×20s",notes:"Add 6th set; shorter rest",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:7,phase:"foundation",workout:"5 × 14",rest:75,accessory:"Side plank 2×20s/side",notes:"Push pace slightly; crisp form",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:8,phase:"foundation",workout:"REST",rest:0,accessory:"Band pull-aparts 2×15",notes:"Full recovery",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:9,phase:"foundation",workout:"6 × 13",rest:75,accessory:"Dead bug 2×10/side",notes:"Building work capacity",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:10,phase:"foundation",workout:"TEST SET",rest:180,accessory:"—",notes:"~90% effort. Log result. Stop at form breakdown.",rir:"1–2",isTest:true,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:11,phase:"build",workout:"REST",rest:0,accessory:"Band pull-aparts 3×15",notes:"Recovery after test",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:12,phase:"build",workout:"5 × 15",rest:75,accessory:"Diamond pushups 2×8",notes:"Build on new baseline; tricep prep",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:13,phase:"build",workout:"6 × 15",rest:60,accessory:"Deficit pushups 2×8",notes:"Shorter rest; bottom strength",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:14,phase:"build",workout:"GTG 4 × 10",rest:0,accessory:"Hollow hold 3×20s",notes:"Easy sets spread all day. Stay fresh.",rir:"3+",isTest:false,isGTG:true,isDeload:false,isRest:false,isNegative:false},
+      {day:15,phase:"build",workout:"REST",rest:0,accessory:"Band pull-aparts 3×15 + face pulls 2×15",notes:"Recovery + rear delt health",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:16,phase:"build",workout:"6 × 16",rest:60,accessory:"Diamond pushups 2×10",notes:"Volume increasing",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:17,phase:"build",workout:"DELOAD 4 × 12",rest:90,accessory:"Slow eccentrics 3×5 (3s down)",notes:"Critical deload. Volume −40%.",rir:"3+",isTest:false,isGTG:false,isDeload:true,isRest:false,isNegative:false},
+      {day:18,phase:"build",workout:"REST",rest:0,accessory:"Band pull-aparts 3×15",notes:"Full recovery before peak push",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:19,phase:"build",workout:"6 × 17",rest:60,accessory:"Deficit pushups 2×10",notes:"Near-peak volume week",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:20,phase:"build",workout:"TEST SET",rest:180,accessory:"—",notes:"~90-95% effort. Log result. Sets Peak targets.",rir:"1",isTest:true,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:21,phase:"peak",workout:"REST",rest:0,accessory:"Band pull-aparts 3×15 + face pulls 2×15",notes:"Recovery after test",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:22,phase:"peak",workout:"5 × 20",rest:60,accessory:"Diamond pushups 3×8",notes:"Big single sets; tricep volume",rir:"1–2",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:23,phase:"peak",workout:"6 × 18",rest:50,accessory:"Deficit pushups 3×10",notes:"Shorter rest, high volume",rir:"1–2",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:24,phase:"peak",workout:"GTG 4 × 15",rest:0,accessory:"Hollow hold 3×30s + side plank 2×25s",notes:"Keep muscles primed, low fatigue",rir:"3+",isTest:false,isGTG:true,isDeload:false,isRest:false,isNegative:false},
+      {day:25,phase:"peak",workout:"REST",rest:0,accessory:"Band pull-aparts 3×15 + scap pushups 2×12",notes:"Full recovery",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:26,phase:"peak",workout:"5 × 22",rest:60,accessory:"Diamond pushups 2×max (strict)",notes:"Approaching target set size",rir:"1",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:27,phase:"peak",workout:"4 × 20",rest:45,accessory:"2 × max strict form (no grind)",notes:"Quality over quantity",rir:"2",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:28,phase:"peak",workout:"TAPER 3 × 10",rest:0,accessory:"Mobility flow 5 min",notes:"Taper down, stay loose",rir:"3+",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:29,phase:"taper",workout:"REST",rest:0,accessory:"Breathing + visualization 5 min",notes:"Full recovery, sleep well, hydrate",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:30,phase:"taper",workout:"MAX SET",rest:0,accessory:"Warm-up: 5-10 easy reps first",notes:"GO FOR 50. Controlled descent, explosive up.",rir:"0",isTest:true,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+    ]
+  },
+  pullup: {
+    id: "pullup",
+    name: "Pullups",
+    emoji: "🧗",
+    goal: "5 → 20",
+    color: "#58a6ff",
+    phases: [
+      {id:"foundation",name:"Foundation",color:"#58a6ff",days:10},
+      {id:"build",name:"Build",color:"#a371f7",days:10},
+      {id:"peak",name:"Peak",color:"#f78166",days:8},
+      {id:"taper",name:"Taper",color:"#d29922",days:2},
+    ],
+    defaultPlan: [
+      {day:1,phase:"foundation",workout:"5 × 3",rest:120,accessory:"—",notes:"Baseline; strict form, full hang to chin over bar",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:2,phase:"foundation",workout:"GTG 6 × 2",rest:0,accessory:"—",notes:"Low fatigue, keep sets far from failure",rir:"3+",isTest:false,isGTG:true,isDeload:false,isRest:false,isNegative:false},
+      {day:3,phase:"foundation",workout:"5 × 3",rest:120,accessory:"—",notes:"Consistency over intensity",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:4,phase:"foundation",workout:"REST",rest:0,accessory:"Light mobility: shoulders/elbows",notes:"Full recovery; shoulders/elbows need it",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:5,phase:"foundation",workout:"6 × 3",rest:90,accessory:"—",notes:"Adding a 6th set",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:6,phase:"foundation",workout:"GTG 6 × 2",rest:0,accessory:"—",notes:"Spread through the day, stay fresh",rir:"3+",isTest:false,isGTG:true,isDeload:false,isRest:false,isNegative:false},
+      {day:7,phase:"foundation",workout:"REST",rest:0,accessory:"Light hang + stretch",notes:"Recovery day",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:8,phase:"foundation",workout:"6 × 3 + 2 neg",rest:90,accessory:"2 × 5-sec negatives",notes:"Negatives build eccentric strength",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:true},
+      {day:9,phase:"foundation",workout:"5 × 4",rest:90,accessory:"—",notes:"Rep bump on fewer sets",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:10,phase:"foundation",workout:"TEST SET",rest:180,accessory:"—",notes:"~90% effort, don't grind out an ugly rep",rir:"1–2",isTest:true,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:11,phase:"build",workout:"REST",rest:0,accessory:"Band pull-aparts 3×15 + dead hangs 3×20s",notes:"Recovery after test",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:12,phase:"build",workout:"6 × 4",rest:90,accessory:"—",notes:"Volume building on new baseline",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:13,phase:"build",workout:"GTG 6 × 3",rest:0,accessory:"—",notes:"Keep reps crisp, stop short of grinding",rir:"3+",isTest:false,isGTG:true,isDeload:false,isRest:false,isNegative:false},
+      {day:14,phase:"build",workout:"6 × 4 + 3 neg",rest:90,accessory:"3 × 5-sec negatives",notes:"Negatives at end of session only",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:true},
+      {day:15,phase:"build",workout:"REST",rest:0,accessory:"Scap pull-ups 3×8 + dead hangs 3×30s",notes:"Recovery day",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:16,phase:"build",workout:"5 × 5",rest:120,accessory:"—",notes:"Bigger single sets, longer rest",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:17,phase:"build",workout:"GTG 6 × 3",rest:0,accessory:"—",notes:"Maintain frequency, low fatigue",rir:"3+",isTest:false,isGTG:true,isDeload:false,isRest:false,isNegative:false},
+      {day:18,phase:"build",workout:"REST",rest:0,accessory:"Band face pulls 3×15 + active hangs 3×20s",notes:"Recovery day",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:19,phase:"build",workout:"6 × 5",rest:90,accessory:"—",notes:"Near-peak volume week",rir:"2–3",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:20,phase:"build",workout:"TEST SET",rest:180,accessory:"—",notes:"~90-95% effort, note number",rir:"1",isTest:true,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:21,phase:"peak",workout:"REST",rest:0,accessory:"Dead hangs 3×30s + scap pull-ups 3×8",notes:"Recovery after test",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:22,phase:"peak",workout:"5 × 6",rest:120,accessory:"—",notes:"Longer rest lets each set be quality",rir:"1–2",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:23,phase:"peak",workout:"GTG 5 × 4",rest:0,accessory:"—",notes:"Keep joints fresh, avoid grinding reps",rir:"3+",isTest:false,isGTG:true,isDeload:false,isRest:false,isNegative:false},
+      {day:24,phase:"peak",workout:"6 × 6",rest:90,accessory:"—",notes:"Peak weekly volume",rir:"1–2",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:25,phase:"peak",workout:"REST",rest:0,accessory:"Full recovery - don't skip this one",notes:"Recovery day - don't skip this one",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:26,phase:"peak",workout:"4 × 8",rest:150,accessory:"—",notes:"Biggest single sets of the block",rir:"1",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:27,phase:"peak",workout:"5 × 6",rest:90,accessory:"—",notes:"Strict form, full lockout each rep",rir:"2",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:28,phase:"taper",workout:"3 × 4",rest:180,accessory:"Light hang + stretch",notes:"Taper down, keep it easy",rir:"3+",isTest:false,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+      {day:29,phase:"taper",workout:"REST",rest:0,accessory:"Light hang + stretch",notes:"Full recovery, hydrate, sleep well",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false},
+      {day:30,phase:"taper",workout:"MAX SET",rest:0,accessory:"Warm-up: 2-3 easy reps, rest 5 min",notes:"GO FOR 20. Full hang to chin over bar.",rir:"0",isTest:true,isGTG:false,isDeload:false,isRest:false,isNegative:false},
+    ]
+  }
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM PROGRAM ENGINE
+// ═══════════════════════════════════════════════════════════════
+const CUSTOM_PLANS_KEY = "strengthProtocol_customPlans_v1";
+const PLAN_OVERRIDES_KEY = "strengthProtocol_planOverrides_v1";
+const REMOVED_PLANS_KEY = "strengthProtocol_removedPlans_v1";
+const PROFILE_KEY = "strengthProtocol_profile_v1";
+const ONBOARDING_KEY = "strengthProtocol_onboarding_v1";
+const ACTIVE_PLANS_KEY = "strengthProtocol_activePlans_v1";
+const ACCENT_PALETTE = ["#f78166","#58a6ff","#a371f7","#3fb950","#d29922","#f778ba","#79c0ff"];
+
+// Keep persisted accent values concrete. Older builds could save `var(--accent)`
+// as a plan color, which makes --accent self-referential and therefore invalid CSS.
+function isValidAccentColor(value){
+  if(typeof value!=="string") return false;
+  const v=value.trim();
+  if(!v || /^var\(\s*--accent\s*\)$/i.test(v)) return false;
+  return /^(#[0-9a-f]{3,8}|rgba?\([^)]*\)|hsla?\([^)]*\))$/i.test(v);
+}
+function getSafeAccentColor(value,fallback="#f78166"){
+  return isValidAccentColor(value) ? value.trim() : fallback;
+}
+const PHASE_COLORS = {foundation:"#58a6ff",build:"#a371f7",peak:"#f78166",taper:"#d29922"};
+
+function slugify(value){ return String(value).toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,28) || "custom"; }
+function parseGoalNumbers(goal){
+  const m=String(goal||"").match(/(\d+)\s*(?:→|->)\s*(\d+)/);
+  return m ? {current:Number(m[1]),goal:Number(m[2])} : {current:0,goal:0};
+}
+function trainingOffsets(freq){
+  return ({3:[0,2,5],4:[0,1,3,5],5:[0,1,2,4,5],6:[0,1,2,3,4,5]})[freq] || [0,1,3,5];
+}
+
+function assessGoalFeasibility(current, goal, duration, freq){
+  current=Number(current); goal=Number(goal); duration=Number(duration); freq=Number(freq);
+  if(!Number.isFinite(current)||!Number.isFinite(goal)||!Number.isFinite(duration)||!Number.isFinite(freq)){
+    return {ok:false,reason:"Enter valid numbers."};
+  }
+  if(current<1) return {ok:false,reason:"Initial reps must be at least 1."};
+  if(goal<=current) return {ok:false,reason:`Your goal (${goal}) must be higher than your current ability (${current}).`};
+  if(duration<14) return {ok:false,reason:"Use at least 14 days so the plan has enough time for progression and recovery."};
+  if(freq<2||freq>6) return {ok:false,reason:"Choose 2–6 training days per week so recovery days remain in the plan."};
+
+  // This is a conservative planning estimate, not a promise of physiological adaptation.
+  // The rate is intentionally capped so the generator rejects targets that would require
+  // unusually large week-to-week jumps. More training days do not remove the recovery cap.
+  const weeklyRate = ({2:.04,3:.055,4:.065,5:.07,6:.075})[freq] || .065;
+  const weeks=duration/7;
+  const estimatedCeiling=Math.floor(current*Math.pow(1+weeklyRate,weeks));
+  const minimumProgress=Math.max(1,Math.ceil(current*(Math.pow(1+weeklyRate,weeks)-1)));
+  const gap=goal-current;
+  const allowedGap=Math.max(1,estimatedCeiling-current);
+  if(goal>estimatedCeiling){
+    const suggested=Math.max(current+1,estimatedCeiling);
+    return {ok:false,reason:`That target is too aggressive for ${duration} days at ${freq} days/week. The plan estimates about ${estimatedCeiling} reps as a conservative upper planning target from ${current}.`,suggested,estimatedCeiling,weeks,weeklyRate,allowedGap,minimumProgress};
+  }
+  return {ok:true,estimatedCeiling,weeks,weeklyRate,allowedGap,gap};
+}
+
+function showGoalError(result, inputSelector){
+  const suggested=result.suggested?` Try ${result.suggested} reps instead.`:"";
+  const message=`${result.reason}${suggested}`;
+  showToast(message,"error",8000);
+  const input=$(inputSelector);
+  if(input){
+    input.setAttribute("aria-invalid","true");
+    input.classList.add("input-error");
+    input.focus();
+    input.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+  // Keep the reason visible in the onboarding form instead of relying only on a toast.
+  const existing=$("#onboardingGoalError");
+  if(existing){ existing.textContent=message; existing.hidden=false; }
+}
+
+function buildCustomSchedule({current,goal,duration,freq,name,note}){
+  const phases=[
+    {id:"foundation",name:"Foundation",color:PHASE_COLORS.foundation,ratio:.25},
+    {id:"build",name:"Build",color:PHASE_COLORS.build,ratio:.40},
+    {id:"peak",name:"Peak",color:PHASE_COLORS.peak,ratio:.25},
+    {id:"taper",name:"Taper",color:PHASE_COLORS.taper,ratio:.10}
+  ];
+  let used=0;
+  phases.forEach((p,i)=>{p.days=i===phases.length-1?duration-used:Math.max(1,Math.round(duration*p.ratio));used+=p.days;});
+  const phaseForDay=day=>{let n=0;for(const p of phases){n+=p.days;if(day<=n)return p;}return phases[phases.length-1];};
+  const offsets=trainingOffsets(freq), days=[];
+  const weeklyRate=({2:.04,3:.055,4:.065,5:.07,6:.075})[freq] || .065;
+  const phaseSetPct={foundation:.55,build:.62,peak:.68,taper:.50};
+  const setCountByPhase={foundation:3,build:4,peak:3,taper:2};
+  const restByPhase={foundation:120,build:120,peak:150,taper:150};
+
+  // Project the user's working capacity from their actual starting max.
+  // The progression is bounded by the same conservative planning rate used by the
+  // feasibility check, so the schedule cannot magically jump to the goal.
+  const projectedMaxAtDay=day=>Math.min(goal,current*Math.pow(1+weeklyRate,day/7));
+
+  for(let day=1;day<=duration;day++){
+    const phase=phaseForDay(day), weekPos=(day-1)%7, isFinal=day===duration;
+    const projected=Math.max(current,Math.round(projectedMaxAtDay(day)));
+    const isCheckpoint=day>1 && day%10===0 && day<duration;
+    if(isFinal){
+      days.push({day,phase:phase.id,workout:"MAX SET",rest:0,accessory:"Warm-up: 5 easy reps",notes:`Final test — target ${goal}. ${note||"Use clean, controlled reps and stop if technique breaks."}`,rir:"0",isTest:true,isGTG:false,isDeload:false,isRest:false,isNegative:false,sets:[],completed:false,comment:"",startTime:null,endTime:null});
+      continue;
+    }
+    if(isCheckpoint){
+      days.push({day,phase:phase.id,workout:"TEST SET",rest:180,accessory:"—",notes:`Checkpoint — projected capacity: ~${projected} reps. Record your actual result.`,rir:"1–2",isTest:true,isGTG:false,isDeload:false,isRest:false,isNegative:false,sets:[],completed:false,comment:"",startTime:null,endTime:null});
+      continue;
+    }
+    if(!offsets.includes(weekPos)){
+      days.push({day,phase:phase.id,workout:"REST",rest:0,accessory:"Light mobility 5–10 min",notes:"Recovery day. Sleep, hydrate and let your body adapt.",rir:"—",isTest:false,isGTG:false,isDeload:false,isRest:true,isNegative:false,sets:[],completed:false,comment:"",startTime:null,endTime:null});
+      continue;
+    }
+
+    const setCount=setCountByPhase[phase.id];
+    const reps=Math.max(1,Math.min(goal,Math.round(projected*phaseSetPct[phase.id])));
+    const rest=restByPhase[phase.id];
+    const targetNote=phase.id==="foundation"
+      ? "Build repeatable technique and leave 2–3 reps in reserve."
+      : phase.id==="build"
+        ? "Add quality volume without grinding; leave about 2 reps in reserve."
+        : phase.id==="peak"
+          ? "Practice goal-specific strength with full recovery between sets."
+          : "Reduce volume so fatigue falls before the final test.";
+    days.push({day,phase:phase.id,workout:`${setCount} × ${reps}`,rest,accessory:phase.id==="peak"?"Optional easy accessory":"—",notes:`Projected capacity ~${projected} • ${targetNote} ${note||""}`.trim(),rir:phase.id==="peak"?"1–2":"2–3",isTest:false,isGTG:false,isDeload:phase.id==="taper",isRest:false,isNegative:false,sets:[],completed:false,comment:"",startTime:null,endTime:null});
+  }
+  return {id:"custom-"+Date.now().toString(36),name,emoji:"✦",goal:`${current} → ${goal}`,color:"#f78166",currentMax:current,targetMax:goal,duration,frequency:freq,note,phases:phases.map(({id,name,color,days})=>({id,name,color,days})),defaultPlan:days,isCustom:true};
+}
+function getActivePlanIds(){
+  try{
+    const raw=localStorage.getItem(ACTIVE_PLANS_KEY);
+    if(raw===null) return null;
+    const saved=JSON.parse(raw);
+    if(Array.isArray(saved)) return saved.filter(id=>PLANS[id]);
+  }catch(e){console.warn("Active plan list could not be loaded",e);}
+  return null;
+}
+function saveActivePlanIds(ids){
+  const unique=[...new Set(ids)].filter(id=>PLANS[id]);
+  localStorage.setItem(ACTIVE_PLANS_KEY,JSON.stringify(unique));
+}
+function ensureActivePlan(planId){
+  const ids=getActivePlanIds() || [];
+  if(!ids.includes(planId)) ids.push(planId);
+  saveActivePlanIds(ids);
+}
+function removeActivePlan(planId){
+  const ids=(getActivePlanIds()||[]).filter(id=>id!==planId);
+  saveActivePlanIds(ids);
+}
+function getAvailablePlans(){
+  const ids=getActivePlanIds();
+  if(!ids) return Object.values(PLANS);
+  return ids.map(id=>PLANS[id]).filter(Boolean);
+}
+function getUnusedAccent(excludeId=null){
+  const used=new Set(getAvailablePlans().filter(p=>p.id!==excludeId).map(p=>p.color?.toLowerCase()));
+  return ACCENT_PALETTE.find(c=>!used.has(c.toLowerCase())) || ACCENT_PALETTE[0];
+}
+function applyPlanAccent(planId,color){
+  if(!PLANS[planId]||!color) return;
+  PLANS[planId].color=getSafeAccentColor(color, PLANS[planId].color || "#f78166");
+  if(PLANS[planId].isCustom) saveCustomPlan(PLANS[planId]);
+  else savePlanOverride(PLANS[planId]);
+  if(currentPlanId===planId){ document.documentElement.style.setProperty('--accent',color); document.documentElement.style.setProperty('--glow-accent',`color-mix(in srgb,${color} 24%,transparent)`); document.documentElement.style.setProperty('--glow-accent-strong',`color-mix(in srgb,${color} 34%,transparent)`); }
+}
+
+function loadCustomPlans(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(CUSTOM_PLANS_KEY)||"[]");
+    if(Array.isArray(saved)) saved.forEach(plan=>{
+      if(plan?.id&&plan.defaultPlan){
+        PLANS[plan.id]={...plan,color:getSafeAccentColor(plan.color,getUnusedAccent(plan.id))};
+      }
+    });
+  }catch(e){console.warn("Custom programs could not be loaded",e);}
+  try{
+    const overrides=JSON.parse(localStorage.getItem(PLAN_OVERRIDES_KEY)||"{}");
+    if(overrides && typeof overrides==="object") Object.entries(overrides).forEach(([id,plan])=>{
+      if(PLANS[id]&&plan?.defaultPlan){
+        const base=PLANS[id];
+        PLANS[id]={...base,...plan,id,color:getSafeAccentColor(plan.color,base.color)};
+      }
+    });
+  }catch(e){console.warn("Plan overrides could not be loaded",e);}
+  try{
+    const removed=JSON.parse(localStorage.getItem(REMOVED_PLANS_KEY)||"[]");
+    if(Array.isArray(removed)) removed.forEach(id=>{if(PLANS[id]) delete PLANS[id];});
+  }catch(e){console.warn("Removed plans could not be loaded",e);}
+}
+function saveCustomPlan(plan){
+  const saved=Object.values(PLANS).filter(p=>p.isCustom&&p.id!==plan.id);
+  localStorage.setItem(CUSTOM_PLANS_KEY,JSON.stringify([...saved,plan]));
+}
+function renderPlanSwitcher(){
+  const nav=$("#planSwitcher"); if(!nav)return;
+  nav.innerHTML="";
+  getAvailablePlans().forEach(plan=>{
+    const btn=document.createElement("button");
+    btn.className=`plan-btn${plan.isCustom?" custom":""}${plan.id===currentPlanId?" active":""}`;
+    btn.dataset.plan=plan.id; btn.role="tab"; btn.setAttribute("aria-selected",plan.id===currentPlanId);
+    btn.innerHTML=`<span>${plan.emoji}</span> ${plan.name}`;
+    btn.addEventListener("click",()=>switchPlan(plan.id));
+    nav.appendChild(btn);
+  });
+}
+function switchPlan(newPlan){
+  if(!PLANS[newPlan]||newPlan===currentPlanId)return;
+  state.activeTimers.forEach(t=>clearInterval(t.interval)); state.activeTimers.clear(); releaseWakeLock();
+  currentPlanId=newPlan; state.currentPhase="foundation"; loadState(); renderAll(); showToast(`Switched to ${PLANS[newPlan].name}`,"info");
+}
+function renderAccentPicker(containerId,inputId,selected,excludeId=null){
+  const wrap=$(containerId), input=$(inputId);
+  if(!wrap||!input) return;
+  const value=selected||getUnusedAccent(excludeId);
+  input.value=value;
+  const usedByOthers=new Set(getAvailablePlans().filter(p=>p.id!==excludeId).map(p=>p.color?.toLowerCase()));
+  wrap.innerHTML=ACCENT_PALETTE.map(color=>{const active=color.toLowerCase()===String(value).toLowerCase();const used=usedByOthers.has(color.toLowerCase());return `<button type="button" class="accent-swatch${active?" active":""}" style="--swatch:${color}" data-accent="${color}" aria-label="${used&&!active?"Accent already used by another exercise":"Use "+color+" accent"}" aria-pressed="${active}" ${used&&!active?"disabled":""}></button>`}).join("");
+  wrap.querySelectorAll(".accent-swatch").forEach(btn=>btn.addEventListener("click",()=>{
+    const chosen=btn.dataset.accent; input.value=chosen;
+    wrap.querySelectorAll(".accent-swatch").forEach(b=>{const active=b===btn;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));});
+    if(inputId==="#exerciseAccentSelect"){ applyPlanAccent(getManagedPlanId(),chosen); renderPlanSwitcher(); updatePlanUI(); }
+    if(inputId==="#programAccent") updateProgramPreview();
+  }));
+}
+function syncProgramExerciseType(){
+  const type=$("#programExerciseType")?.value||"custom", wrap=$("#programCustomNameWrap"), name=$("#programName");
+  const isCustom=type==="custom";
+  if(wrap){wrap.hidden=!isCustom;}
+  if(name){name.disabled=!isCustom; name.required=isCustom; if(!isCustom) name.value=PLANS[type]?.name||type;}
+  const current=Number($("#programCurrent")?.value)||10, goal=Number($("#programGoal")?.value)||30;
+  const accent=$("#programAccent")?.value||getUnusedAccent();
+  renderAccentPicker("#programAccentPicker","#programAccent",accent,editingPlanId);
+}
+
+function updateProgramPreview(){
+  const current=Math.max(1,Number($("#programCurrent")?.value)||10);
+  const rawGoal=Number($("#programGoal")?.value);
+  const goal=Number.isFinite(rawGoal)&&rawGoal>0?rawGoal:30;
+  const duration=Number($("#programDuration")?.value)||30;
+  const freq=Number($("#programFrequency")?.value)||4;
+  $("#previewCurrent").textContent=current; $("#previewGoal").textContent=goal; $("#previewDaysChip").textContent=`${duration} DAYS`;
+  const phases=[["Foundation",.25,PHASE_COLORS.foundation],["Build",.40,PHASE_COLORS.build],["Peak",.25,PHASE_COLORS.peak],["Taper",.10,PHASE_COLORS.taper]];
+  $("#previewPhases").innerHTML=phases.map(([n,r,c])=>`<div class="preview-phase"><span>${n}</span><div class="preview-phase-bar"><i style="width:${Math.round(r*100)}%;--phase-color:${c}"></i></div><em style="font-style:normal;color:var(--fg-muted)">${Math.max(1,Math.round(r*duration))}d</em></div>`).join("");
+  const feasibility=assessGoalFeasibility(current,goal,duration,freq);
+  $("#previewMessage").textContent=feasibility.ok
+    ? `${freq} training days/week • ${duration} days • estimated planning ceiling ≈ ${feasibility.estimatedCeiling} reps. Progressive overload is capped so the target is not treated as a promise.`
+    : `${feasibility.reason}${feasibility.suggested?` Suggested target: ${feasibility.suggested}.`:""}`;
+  $("#previewMessage").style.color=feasibility.ok?"var(--fg-muted)":"var(--danger)";
+}
+let editingPlanId = null;
+
+function openCreateProgram(editId=null){
+  editingPlanId = editId;
+  const plan = editId ? PLANS[editId] : {name:"",goal:"10 → 30",currentMax:10,targetMax:30,duration:30,frequency:4,note:"",color:getUnusedAccent()};
+  const nums=parseGoalNumbers(plan?.goal);
+  const type=editId ? (editId==="pushup"||editId==="pullup"?editId:"custom") : "custom";
+  $("#programExerciseType").value=type;
+  $("#programName").value=editId ? (plan.name||"") : "";
+  $("#programNote").value=editId ? (plan.note||"") : "";
+  $("#programCurrent").value=(plan?.currentMax??nums.current)||10;
+  $("#programGoal").value=(plan?.targetMax??nums.goal)||30;
+  $("#programFrequency").value=String(plan?.frequency||4);
+  $("#programDuration").value=String(plan?.duration||30);
+  $("#programAccent").value=plan?.color||getUnusedAccent(editId);
+  $("#createProgramTitle").textContent=editId ? "Edit your progression" : "Add an exercise";
+  $("#btnGenerateProgram").innerHTML=editId ? 'Save changes <span>→</span>' : 'Generate program <span>→</span>';
+  openModal("createProgram"); syncProgramExerciseType(); updateProgramPreview(); setTimeout(()=>$("#programName")?.focus(),50);
+}
+function generateCustomProgram(){
+  const type=$("#programExerciseType").value;
+  const name=type==="custom" ? $("#programName").value.trim() : (PLANS[type]?.name||type);
+  const current=Math.max(1,Number($("#programCurrent").value)||0);
+  const goal=Math.max(0,Number($("#programGoal").value)||0);
+  const freq=Number($("#programFrequency").value)||4;
+  const duration=Number($("#programDuration").value)||30;
+  const note=$("#programNote").value.trim();
+  const accent=$("#programAccent").value||getUnusedAccent(editingPlanId);
+  if(type==="custom"&&!name)return showToast("Give the exercise a name first","error");
+  if(!editingPlanId && (type==="pushup"||type==="pullup") && getAvailablePlans().some(p=>p.id===type)){
+    return showToast(`${PLANS[type].name} is already in your exercises.` ,"error");
+  }
+  const feasibility=assessGoalFeasibility(current,goal,duration,freq);
+  if(!feasibility.ok){ showGoalError(feasibility,"#programGoal"); return; }
+  const oldPlan=editingPlanId?PLANS[editingPlanId]:null;
+  const oldDays=oldPlan&&currentPlanId===editingPlanId?state.days:[];
+  const id=editingPlanId || (type==="custom"?`custom-${slugify(name)}-${Date.now().toString(36)}`:type);
+  const generated=buildPersonalizedPlan(type,current,goal,duration,freq,type==="custom"?name:PLANS[type].name,accent,note);
+  const plan=oldPlan?{...generated,id:oldPlan.id,name:oldPlan.name,emoji:oldPlan.emoji,color:accent,isCustom:!!oldPlan.isCustom}:generated;
+  if(oldDays.length){
+    plan.defaultPlan=plan.defaultPlan.map(day=>{const old=oldDays.find(d=>d.day===day.day);return old?{...day,completed:!!old.completed,sets:Array.isArray(old.sets)?old.sets:[],comment:old.comment||"",startTime:old.startTime||null,endTime:old.endTime||null}:day;});
+  }
+  PLANS[plan.id]=plan;
+  if(plan.isCustom||type==="custom") saveCustomPlan(plan); else savePlanOverride(plan);
+  ensureActivePlan(plan.id);
+  currentPlanId=plan.id; state.currentPhase="foundation"; loadState(); renderAll(); closeModal("createProgram");
+  showToast(oldPlan?`${name} updated`:`${name} added to your exercises`,"success");
+  editingPlanId=null; $("#createProgramTitle").textContent="Add an exercise"; $("#btnGenerateProgram").innerHTML='Generate program <span>→</span>';
+}
+
+function savePlanOverride(plan){
+  try{
+    const overrides=JSON.parse(localStorage.getItem(PLAN_OVERRIDES_KEY)||"{}");
+    overrides[plan.id]=plan;
+    localStorage.setItem(PLAN_OVERRIDES_KEY,JSON.stringify(overrides));
+  }catch(e){console.warn("Could not save plan override",e);}
+}
+
+function getManagedPlanId(){
+  return $("#exerciseManagerSelect")?.value || currentPlanId;
+}
+
+function refreshCustomManagement(){
+  const select=$("#exerciseManagerSelect");
+  if(!select) return;
+  const plans=getAvailablePlans();
+  select.innerHTML=plans.map(plan=>`<option value="${plan.id}">${plan.emoji||"✦"} ${plan.name} • ${plan.goal}</option>`).join("");
+  if(plans.some(p=>p.id===currentPlanId)) select.value=currentPlanId;
+  else if(plans[0]) select.value=plans[0].id;
+  const selected=PLANS[select.value];
+  if(selected) renderAccentPicker("#exerciseAccentPicker","#exerciseAccentSelect",selected.color,selected.id);
+}
+
+function removeSelectedExercise(){
+  const id=getManagedPlanId();
+  const plan=PLANS[id];
+  if(!plan) return showToast("Choose an exercise first","error");
+  const remaining=Object.values(PLANS).filter(p=>p.id!==id);
+  if(!remaining.length) return showToast("Keep at least one exercise in your app","error");
+
+  const planName=plan.name;
+  // Remove immediately. A toast gives the user clear feedback instead of relying on
+  // the browser's confirm() dialog, which can be blocked in embedded/file contexts.
+  try{
+    if(plan.isCustom){
+      const saved=Object.values(PLANS).filter(p=>p.isCustom&&p.id!==id);
+      localStorage.setItem(CUSTOM_PLANS_KEY,JSON.stringify(saved));
+    }else{
+      const removed=JSON.parse(localStorage.getItem(REMOVED_PLANS_KEY)||"[]");
+      if(!removed.includes(id)) removed.push(id);
+      localStorage.setItem(REMOVED_PLANS_KEY,JSON.stringify(removed));
+      const overrides=JSON.parse(localStorage.getItem(PLAN_OVERRIDES_KEY)||"{}");
+      delete overrides[id];
+      localStorage.setItem(PLAN_OVERRIDES_KEY,JSON.stringify(overrides));
+    }
+
+    localStorage.removeItem(`${STORAGE_PREFIX}_${id}_days`);
+    localStorage.removeItem(`${STORAGE_PREFIX}_${id}_settings`);
+    delete PLANS[id];
+    removeActivePlan(id);
+
+    if(id===currentPlanId){
+      const next=remaining[0];
+      currentPlanId=next.id;
+      state.currentPhase="foundation";
+      loadState();
+      renderAll();
+    }else{
+      renderPlanSwitcher();
+      refreshCustomManagement();
+    }
+    showToast(`${planName} removed successfully`,"success",4500);
+  }catch(err){
+    console.error(err);
+    showToast("Could not remove this exercise. Your data was left unchanged.","error",6000);
+  }
+}
+
+
+const STORAGE_PREFIX = "strengthProtocol_v2";
+
+// ═══════════════════════════════════════════════════════════════
+// STATE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
+let currentPlanId = "pushup";
+let state = {
+  days: [],
+  settings: {
+    sound: true,
+    haptic: true,
+    autoRest: true,
+    wakeLock: false,
+    compact: false,
+    showRIR: true,
+  },
+  activeTimers: new Map(),
+  wakeLock: null,
+  currentPhase: "foundation",
+};
+
+function getStorageKeys(){
+  return {
+    days: `${STORAGE_PREFIX}_${currentPlanId}_days`,
+    settings: `${STORAGE_PREFIX}_${currentPlanId}_settings`,
+    startDate: `${STORAGE_PREFIX}_${currentPlanId}_startDate`,
+  };
+}
+
+function loadState(){
+  const keys = getStorageKeys();
+  try{
+    const stored = localStorage.getItem(keys.days);
+    const plan = getPlan();
+    const parsed = stored ? JSON.parse(stored) : null;
+    if(Array.isArray(parsed)){
+      state.days = parsed;
+    }else{
+      state.days = plan.defaultPlan.map(d=>({...d,completed:false,sets:[],comment:"",startTime:null,endTime:null}));
+    }
+  }catch(e){
+    state.days = getPlan().defaultPlan.map(d=>({...d,completed:false,sets:[],comment:"",startTime:null,endTime:null}));
+  }
+  
+  try{
+    const settings = localStorage.getItem(keys.settings);
+    if(settings){ state.settings = {...state.settings, ...JSON.parse(settings)}; }
+  }catch(e){}
+  
+  state.days.forEach(d=>{
+    d.completed = d.completed || false;
+    d.sets = d.sets || [];
+    d.comment = d.comment || "";
+    d.startTime = d.startTime || null;
+    d.endTime = d.endTime || null;
+    d.isNegative = d.isNegative || false;
+  });
+  
+  const existingDays = new Set(state.days.map(d=>d.day));
+  getPlan().defaultPlan.forEach(def=>{
+    if(!existingDays.has(def.day)){
+      state.days.push({...def,completed:false,sets:[],comment:"",startTime:null,endTime:null});
+    }
+  });
+  
+  state.days.sort((a,b)=>a.day-b.day);
+}
+
+function saveState(){
+  const keys = getStorageKeys();
+  localStorage.setItem(keys.days, JSON.stringify(state.days));
+  localStorage.setItem(keys.settings, JSON.stringify(state.settings));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════
+
+function $(sel,ctx=document){return ctx.querySelector(sel)}
+function $$(sel,ctx=document){return [...ctx.querySelectorAll(sel)]}
+
+function formatTime(seconds){
+  const m = Math.floor(seconds/60).toString().padStart(2,'0');
+  const s = (seconds%60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+function parseSets(workout){
+  const clean = workout.replace(/^(GTG|DELOAD|TAPER)\s+/,'').trim();
+  if(clean === "TEST SET" || clean === "MAX SET" || clean === "REST") return [{reps:0,label:clean}];
+  // Handle "6 × 3 + 2 neg" format
+  const negMatch = clean.match(/(\d+)\s*[×x]\s*(\d+)\s*\+\s*(\d+)\s*neg/i);
+  if(negMatch){
+    const sets = parseInt(negMatch[1]);
+    const reps = parseInt(negMatch[2]);
+    const negs = parseInt(negMatch[3]);
+    const arr = Array(sets).fill(null).map((_,i)=>({reps,label:`Set ${i+1}`}));
+    arr.push({reps:0,label:`${negs} Negatives`,isNegative:true});
+    return arr;
+  }
+  const match = clean.match(/(\d+)\s*[×x]\s*(\d+)/);
+  if(match){
+    const sets = parseInt(match[1]);
+    const reps = parseInt(match[2]);
+    return Array(sets).fill(null).map((_,i)=>({reps,label:`Set ${i+1}`}));
+  }
+  return [{reps:0,label:clean}];
+}
+
+function getPlan(){ return PLANS[currentPlanId]; }
+
+function showToast(message,type="info"){
+  const container = $("#toastContainer");
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(()=>{toast.style.animation="slideIn .3s ease reverse";setTimeout(()=>toast.remove(),300)},3000);
+}
+
+function playNotificationSound(){
+  if(!state.settings.sound) return;
+  const audio = $("#timerSound");
+  audio.currentTime = 0;
+  audio.play().catch(()=>{});
+}
+
+function vibrate(pattern=[100,50,100]){
+  if(!state.settings.haptic) return;
+  if(navigator.vibrate) navigator.vibrate(pattern);
+}
+
+async function requestWakeLock(){
+  if(!state.settings.wakeLock) return;
+  try{
+    if('wakeLock' in navigator){
+      state.wakeLock = await navigator.wakeLock.request('screen');
+      state.wakeLock.addEventListener('release',()=>{state.wakeLock=null});
+    }
+  }catch(e){console.log("Wake lock failed:",e)}
+}
+
+function releaseWakeLock(){
+  if(state.wakeLock){
+    state.wakeLock.release();
+    state.wakeLock = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROFILE / ONBOARDING
+// ═══════════════════════════════════════════════════════════════
+function getProfile(){
+  try{return JSON.parse(localStorage.getItem(PROFILE_KEY)||"null")}catch(e){return null}
+}
+function saveProfile(profile){localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}
+function hasCompletedOnboarding(){return localStorage.getItem(ONBOARDING_KEY)==="1" && !!getProfile()}
+function greetingFor(name){
+  const hour=new Date().getHours();
+  const sal=hour<12?"Good morning":hour<18?"Good afternoon":"Good evening";
+  return `${sal}, ${name}.`;
+}
+function getBasePlanMeta(exerciseId,name){
+  const base=PLANS[exerciseId] || {id:exerciseId,name,emoji:"✦",color:"#f78166"};
+  return {id:exerciseId,name:name||base.name,emoji:base.emoji||"✦",color:base.color||"#f78166"};
+}
+function buildPersonalizedPlan(exerciseId,current,goal,duration,freq,customName="",accent=null,note=""){
+  const meta=getBasePlanMeta(exerciseId,customName||PLANS[exerciseId]?.name);
+  if(accent) meta.color=accent;
+  const generated=buildCustomSchedule({current,goal,duration,freq,name:meta.name,note:note||"Personalized progression generated from your starting point."});
+  const phaseRatios=[.25,.40,.25,.10];
+  let used=0;
+  const phases=[
+    {id:"foundation",name:"Foundation",color:PHASE_COLORS.foundation,days:0},
+    {id:"build",name:"Build",color:PHASE_COLORS.build,days:0},
+    {id:"peak",name:"Peak",color:PHASE_COLORS.peak,days:0},
+    {id:"taper",name:"Taper",color:PHASE_COLORS.taper,days:0}
+  ];
+  phases.forEach((ph,i)=>{ph.days=i===3?duration-used:Math.max(1,Math.round(duration*phaseRatios[i]));used+=ph.days});
+  return {...meta,goal:`${current} → ${goal}`,currentMax:current,targetMax:goal,duration,frequency:freq,phases,defaultPlan:generated.defaultPlan||generated,isCustom:exerciseId.startsWith("custom-")};
+}
+function startPersonalizedProgram({exerciseId,current,goal,duration,freq,customName,accent,note}){
+  const plan=buildPersonalizedPlan(exerciseId,current,goal,duration,freq,customName,accent,note);
+  if(!plan || !plan.defaultPlan || !plan.defaultPlan.length) throw new Error("Unable to generate a workout schedule.");
+  PLANS[plan.id]=plan;
+  ensureActivePlan(plan.id);
+  if(plan.isCustom){saveCustomPlan(plan)}else{savePlanOverride(plan)}
+  currentPlanId=plan.id;
+  state.currentPhase="foundation";
+  loadState();
+  // Rendering is intentionally isolated from program generation. A cosmetic/rendering
+  // issue must never make the primary Build button appear broken.
+  try{ renderAll(); }catch(renderError){
+    console.error("Program generated but dashboard render failed:",renderError);
+  }
+  return plan;
+}
+let onboardingStep=1;
+function setOnboardingStep(step){
+  onboardingStep=step;
+  $$(".onboarding-step-panel").forEach(p=>p.hidden=Number(p.dataset.onboardingStep)!==step);
+  $$(".onboarding-step-dot").forEach((d,i)=>d.classList.toggle("active",i<step));
+  const titles=["First, let's make this yours.","A little context, just for your profile.","Now let's build your target."];
+  const leads=["Tell me what you'd like to be called and we'll personalize the dashboard.","These details are optional. They're here to make the profile feel like yours.","Choose an exercise, tell me where you're starting and where you want to go."];
+  const kicks=["WELCOME","ABOUT YOU","YOUR GOAL"];
+  const aside=["Welcome to your strength journey.","Your dashboard should feel like yours.","Let's turn your target into a plan."];
+  $("#onboardingTitle").textContent=titles[step-1]; $("#onboardingLead").textContent=leads[step-1]; $("#onboardingKicker").textContent=kicks[step-1]; $("#onboardingAsideTitle").textContent=aside[step-1];
+  $("#onboardingBack").hidden=step===1;
+  $("#onboardingNext").textContent=step===3?"Build my program →":"Continue →";
+}
+function openOnboarding(){
+  onboardingStep=1; $("#onboardingOverlay").hidden=false; setOnboardingStep(1); setTimeout(()=>$("#onboardName")?.focus(),80);
+}
+function closeOnboarding(){$("#onboardingOverlay").hidden=true}
+function updateOnboardingPreview(){
+  const c=Math.max(1,Number($("#onboardCurrent")?.value)||20);
+  const rawGoal=Number($("#onboardGoal")?.value);
+  const g=Number.isFinite(rawGoal)&&rawGoal>0?rawGoal:50;
+  const d=Number($("#onboardDuration")?.value)||30;
+  $("#onboardPreviewCurrent").textContent=c; $("#onboardPreviewGoal").textContent=g; $("#onboardPreviewDuration").textContent=`${d}d`;
+}
+function handleOnboardingNext(){
+  const button=$("#onboardingNext");
+  try{
+    if(onboardingStep===1){
+      const name=$("#onboardName")?.value.trim();
+      if(!name){showToast("Tell me your name first","error");$("#onboardName")?.focus();return false;}
+      setOnboardingStep(2);
+      return true;
+    }
+    if(onboardingStep===2){
+      setOnboardingStep(3);
+      setTimeout(()=>$("#onboardExercise")?.focus(),50);
+      return true;
+    }
+
+    const name=$("#onboardName")?.value.trim();
+    const age=Number($("#onboardAge")?.value)||null;
+    const height=Number($("#onboardHeight")?.value)||null;
+    const weight=Number($("#onboardWeight")?.value)||null;
+    const exerciseId=$("#onboardExercise")?.value;
+    const customName=$("#onboardCustomName")?.value.trim();
+    const current=Number($("#onboardCurrent")?.value);
+    const goal=Number($("#onboardGoal")?.value);
+    const freq=Number($("#onboardFrequency")?.value)||4;
+    const duration=Number($("#onboardDuration")?.value)||30;
+    const accent=$("#onboardAccent")?.value||getUnusedAccent();
+
+    if(!name){setOnboardingStep(1);showToast("Tell me your name first","error");return false;}
+    if(!exerciseId){showToast("Choose an exercise first","error");$("#onboardExercise")?.focus();return false;}
+    if(!Number.isFinite(current)||current<1){showToast("Enter your current maximum reps","error");$("#onboardCurrent")?.focus();return false;}
+    if(!Number.isFinite(goal)||goal<1){showToast("Enter your goal reps","error");$("#onboardGoal")?.focus();return false;}
+    if(exerciseId==="custom"&&!customName){showToast("Give your custom exercise a name","error");$("#onboardCustomName")?.focus();return false;}
+
+    const errorBox=$("#onboardingGoalError");
+    if(errorBox){errorBox.hidden=true;errorBox.textContent="";}
+    $("#onboardGoal")?.classList.remove("input-error");
+
+    const feasibility=assessGoalFeasibility(current,goal,duration,freq);
+    if(!feasibility.ok){showGoalError(feasibility,"#onboardGoal");return false;}
+
+    if(button){button.disabled=true;button.setAttribute("aria-busy","true");button.innerHTML='<span class="build-spinner" aria-hidden="true"></span> Building your plan…';}
+
+    // Build the plan first. Nothing is persisted until generation succeeds.
+    let id=exerciseId;
+    if(exerciseId==="custom") id=`custom-${slugify(customName)}-${Date.now().toString(36)}`;
+    const plan=startPersonalizedProgram({
+      exerciseId:id,
+      current,
+      goal,
+      duration,
+      freq,
+      customName:exerciseId==="custom"?customName:PLANS[exerciseId]?.name,
+      accent,
+      note:"Personalized progression generated during onboarding."
+    });
+    if(!plan || !plan.defaultPlan?.length) throw new Error("The generated plan was empty.");
+
+    saveActivePlanIds([plan.id]);
+    saveProfile({name,age,height,weight,createdAt:new Date().toISOString()});
+    localStorage.setItem(ONBOARDING_KEY,"1");
+    closeOnboarding();
+    showToast(`Welcome, ${name}. Your ${plan.name} plan is ready.` ,"success");
+    return true;
+  }catch(err){
+    console.error("Onboarding build failed:",err);
+    showToast("I couldn't build the plan. Please check your entries and try again.","error",7000);
+    return false;
+  }finally{
+    if(button){
+      button.disabled=false;
+      button.removeAttribute("aria-busy");
+      button.innerHTML=onboardingStep===3?'Build my program →':'Continue →';
+    }
+  }
+}
+
+// RENDERING
+// ═══════════════════════════════════════════════════════════════
+
+function renderAll(){
+  renderPlanSwitcher();
+  updatePlanUI();
+  renderHeroSummary();
+  renderPhaseTabs();
+  renderDayCards();
+  renderProgress();
+  applySettings();
+  refreshCustomManagement();
+}
+
+function updatePlanUI(){
+  const plan = getPlan();
+  plan.color=getSafeAccentColor(plan.color, "#f78166");
+  $("#currentPlanTag").textContent = plan.name;
+  $("#currentGoalTag").textContent = plan.goal;
+  $(".brand-icon").style.background = `linear-gradient(135deg,${plan.color},color-mix(in srgb,${plan.color} 55%,#fff))`;
+  document.documentElement.style.setProperty('--accent', plan.color);
+  document.documentElement.style.setProperty('--glow-accent', `color-mix(in srgb,${plan.color} 24%,transparent)`);
+  document.documentElement.style.setProperty('--glow-accent-strong', `color-mix(in srgb,${plan.color} 34%,transparent)`);
+  
+  // Update plan switcher buttons
+  $$(".plan-btn").forEach(btn=>{
+    const isActive = btn.dataset.plan === currentPlanId;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-selected", isActive);
+  });
+}
+
+
+function renderHeroSummary(){
+  const plan=getPlan(), nums=parseGoalNumbers(plan.goal), total=state.days.length, completed=state.days.filter(d=>d.completed).length;
+  const profile=getProfile();
+  $("#heroGreeting").textContent=profile?.name?greetingFor(profile.name):"Welcome to your training dashboard.";
+  const pct=total?Math.round(completed/total*100):0;
+  const currentDay=getCurrentDayNumber();
+  const current=state.days.find(d=>d.day===currentDay)||state.days.find(d=>!d.completed)||state.days[0];
+  const phase=plan.phases.find(p=>p.id===current?.phase)||plan.phases[0];
+  $("#heroPhase").textContent=(phase?.name||"PROGRAM").toUpperCase();
+  $("#heroDayLabel").textContent=`DAY ${current?.day||1}`;
+  $("#heroTitle").textContent=current?.isRest?"Recover. Come back stronger.":current?.isTest?"Checkpoint. See what you can do.":`Let's build toward ${nums.goal} ${plan.name.toLowerCase()}.`;
+  $("#heroSubtitle").textContent=current?.isRest?"Recovery is part of the program — sleep, hydrate and reset.":current?.notes||"A calculated progression from your current ability to your target.";
+  $("#heroCurrent").textContent=(plan.currentMax??nums.current)||"—"; $("#heroGoal").textContent=(plan.targetMax??nums.goal)||"—";
+  $("#heroProgress").textContent=`${pct}%`; $("#heroProgressFill").style.width=`${pct}%`;
+  $("#heroStartBtn").textContent=current?.isRest?"View recovery day →":current?.completed?"View today →":"Start today →";
+  $("#heroStartBtn").onclick=()=>current?.day&&$(`.day-card[data-day="${current.day}"]`)?.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+function renderPhaseTabs(){
+  const plan = getPlan();
+  const container = $("#phaseTabs");
+  container.innerHTML = "";
+  plan.phases.forEach((phase,i)=>{
+    const btn = document.createElement("button");
+    btn.className = `phase-tab${phase.id===state.currentPhase?" active":""}`;
+    btn.dataset.phase = phase.id;
+    btn.role = "tab";
+    btn.ariaSelected = phase.id===state.currentPhase;
+    btn.textContent = phase.name;
+    btn.addEventListener("click",()=>switchPhase(phase.id));
+    container.appendChild(btn);
+  });
+}
+
+function switchPhase(phaseId){
+  if(!getPlan().phases.some(p=>p.id===phaseId)) phaseId = getPlan().phases[0]?.id || "foundation";
+  state.currentPhase = phaseId;
+  $$(".phase-tab").forEach(b=>{b.classList.remove("active");b.ariaSelected="false"});
+  $(`[data-phase="${phaseId}"]`)?.classList.add("active");
+  $(`[data-phase="${phaseId}"]`)?.setAttribute("aria-selected","true");
+  $$(".phase-panel").forEach(p=>p.classList.remove("active"));
+  $(`#panel-${phaseId}`)?.classList.add("active");
+}
+
+function renderDayCards(){
+  const container = $("#dayCards");
+  container.innerHTML = "";
+  
+  const plan = getPlan();
+  const phasesWithDays = plan.phases.map(phase=>{
+    const days = state.days.filter(d=>d.phase===phase.id).sort((a,b)=>a.day-b.day);
+    return {phase, days};
+  }).filter(g=>g.days.length>0);
+  
+  if(phasesWithDays.length===0){
+    $("#emptyState").hidden = false;
+    return;
+  }
+  $("#emptyState").hidden = true;
+  
+  phasesWithDays.forEach(({phase, days})=>{
+    const panel = document.createElement("div");
+    panel.className = `phase-panel${phase.id===state.currentPhase?" active":""}`;
+    panel.id = `panel-${phase.id}`;
+    panel.role = "tabpanel";
+    panel.ariaLabel = `${phase.name} phase`;
+    
+    const phaseHeader = document.createElement("div");
+    phaseHeader.style.cssText = `display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)`;
+    phaseHeader.innerHTML = `
+      <div style="width:10px;height:10px;border-radius:50%;background:${phase.color};box-shadow:0 0 12px ${phase.color}"></div>
+      <h2 style="font-size:1.1rem;font-weight:700">${phase.name}</h2>
+      <span style="font-size:.7rem;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.5px">${days.length} days</span>
+    `;
+    panel.appendChild(phaseHeader);
+    
+    days.forEach(dayData=>{
+      panel.appendChild(createDayCard(dayData));
+    });
+    
+    container.appendChild(panel);
+  });
+  
+  $$(".phase-tab").forEach(tab=>{
+    const isActive = tab.dataset.phase === state.currentPhase;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", isActive);
+  });
+}
+
+function createDayCard(day){
+  const card = document.createElement("article");
+  card.className = `day-card${day.completed?" completed":""}${isCurrentDay(day.day)?" current":""}`;
+  card.dataset.day = day.day;
+  
+  const sets = parseSets(day.workout);
+  const isRest = day.isRest || day.workout === "REST";
+  const isTest = day.isTest;
+  const isGTG = day.isGTG;
+  const isDeload = day.isDeload;
+  const isNegative = day.isNegative;
+  
+  let badges = [];
+  if(isTest) badges.push('<span class="day-badge test">TEST</span>');
+  if(isGTG) badges.push('<span class="day-badge gtg">GTG</span>');
+  if(isDeload) badges.push('<span class="day-badge deload">DELOAD</span>');
+  if(isRest) badges.push('<span class="day-badge rest">REST</span>');
+  if(isNegative) badges.push('<span class="day-badge negative">NEGATIVES</span>');
+  
+  card.innerHTML = `
+    <div class="day-header">
+      <button type="button" class="day-check${day.completed?" checked":""}" data-day="${day.day}" aria-label="${day.completed?"Mark incomplete":"Mark complete"}" aria-pressed="${day.completed}"></button>
+      <div class="day-info">
+        <div class="day-label">Day ${day.day}</div>
+        <div class="day-title">${day.workout}</div>
+        <div class="day-sub">${badges.join("")}<span>${day.notes}</span></div>
+      </div>
+    </div>
+    
+    ${!isRest ? `
+    <div class="sets-grid" data-day="${day.day}">
+      ${sets.map((set,i)=>`
+        <div class="set-row">
+          <div class="set-input-wrap">
+            <input type="number" class="set-input" data-day="${day.day}" data-set="${i}" placeholder="Reps" value="${day.sets[i]??''}" min="0" max="100" aria-label="${set.label} reps" ${set.isNegative?"style=\"background:rgba(163,113,247,.1)\"":""}>
+          </div>
+          <button type="button" class="set-btn${day.sets[i]!=null?" done":""}" data-day="${day.day}" data-set="${i}" data-action="start" ${day.sets[i]!=null?"disabled":""} aria-label="${day.sets[i]!=null?"Set completed":"Start ${set.label}"}">
+            <span class="icon">${day.sets[i]!=null?"✓":(i===0?"▶":"○")}</span>
+            <span>${day.sets[i]!=null?"Done":(i===0?"Start":"Set")}</span>
+          </button>
+        </div>
+      `).join("")}
+    </div>
+    
+    <div class="rest-timer" id="timer-${day.day}" role="timer" aria-live="polite" aria-label="Rest timer">
+      <svg class="rest-timer-circle" viewBox="0 0 48 48">
+        <circle class="rest-timer-circle-bg" cx="24" cy="24" r="22"></circle>
+        <circle class="rest-timer-circle-prog" id="timerCircle-${day.day}" cx="24" cy="24" r="22"></circle>
+      </svg>
+      <div>
+        <div class="rest-timer-text" id="timerText-${day.day}">0:00</div>
+        <div class="rest-timer-label">Rest</div>
+      </div>
+      <button type="button" class="rest-timer-skip" data-day="${day.day}" data-action="skip">Skip</button>
+    </div>
+    ` : ""}
+    
+    ${state.settings.showRIR && day.rir && day.rir!=="—" ? `
+    <div style="font-size:.7rem;color:var(--fg-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+      <span>Target RIR: ${day.rir}</span>
+    </div>
+    ` : ""}
+    
+    <div class="comment-wrap">
+      <label class="comment-label" for="comment-${day.day}">Notes</label>
+      <textarea class="comment-input" id="comment-${day.day}" data-day="${day.day}" placeholder="How did it feel? Form notes, energy, injuries..." rows="2">${day.comment||""}</textarea>
+    </div>
+  `;
+  
+  card.querySelector(".day-check").addEventListener("click",()=>toggleDayComplete(day.day));
+  card.querySelectorAll(".set-btn").forEach(btn=>{
+    btn.addEventListener("click",(e)=>{
+      if(btn.dataset.action==="end") return;
+      handleSetButton(day.day, parseInt(btn.dataset.set), btn);
+    });
+  });
+  card.querySelectorAll(".set-input").forEach(input=>{
+    input.addEventListener("change",()=>updateSetReps(day.day, parseInt(input.dataset.set), parseInt(input.value)||0));
+    input.addEventListener("keydown",(e)=>{if(e.key==="Enter"){e.target.blur();const btn=card.querySelector(`[data-set="${e.target.dataset.set}"].set-btn`);if(btn.dataset.action!=="end")handleSetButton(day.day, parseInt(e.target.dataset.set), btn)}});
+  });
+  card.querySelector(`#comment-${day.day}`).addEventListener("change",(e)=>updateComment(day.day, e.target.value));
+  card.querySelector(".rest-timer-skip")?.addEventListener("click",()=>skipRestTimer(day.day));
+  
+  return card;
+}
+
+function isCurrentDay(dayNum){
+  const keys = getStorageKeys();
+  const startDateStr = localStorage.getItem(keys.startDate);
+  if(!startDateStr) return dayNum===1;
+  const start = new Date(startDateStr);
+  const today = new Date();
+  const diff = Math.floor((today - start) / (1000*60*60*24)) + 1;
+  return diff === dayNum;
+}
+
+function renderProgress(){
+  const total = state.days.length;
+  const completed = state.days.filter(d=>d.completed).length;
+  const totalReps = state.days.reduce((sum,d)=>sum + d.sets.reduce((s,v)=>s+(v||0),0),0);
+  const keys = getStorageKeys();
+  const startDateStr = localStorage.getItem(keys.startDate);
+  let currentDay = 1;
+  if(startDateStr){
+    const start = new Date(startDateStr);
+    const today = new Date();
+    const diff = Math.floor((today - start) / (1000*60*60*24)) + 1;
+    currentDay = Math.max(1, Math.min(diff, state.days.length));
+  }
+  
+  $("#progressFill").style.width = `${total>0?Math.round(completed/total*100):0}%`;
+  $("#progressFill").setAttribute("aria-valuenow", total>0?Math.round(completed/total*100):0);
+  $("#currentDay").textContent = currentDay;
+  $("#completedCount").textContent = completed;
+  $("#totalReps").textContent = totalReps;
+}
+
+function getCurrentDayNumber(){
+  const keys = getStorageKeys();
+  const startDateStr = localStorage.getItem(keys.startDate);
+  if(!startDateStr){
+    localStorage.setItem(keys.startDate, new Date().toISOString());
+    return 1;
+  }
+  const start = new Date(startDateStr);
+  const today = new Date();
+  const diff = Math.floor((today - start) / (1000*60*60*24)) + 1;
+  return Math.max(1, Math.min(diff, state.days.length));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function toggleDayComplete(dayNum){
+  const day = state.days.find(d=>d.day===dayNum);
+  if(!day) return;
+  
+  day.completed = !day.completed;
+  if(day.completed){
+    day.endTime = new Date().toISOString();
+    if(!day.startTime) day.startTime = day.endTime;
+  }else{
+    day.endTime = null;
+  }
+  saveState();
+  renderDayCards();
+  renderProgress();
+  showToast(day.completed?"Day marked complete":"Day marked incomplete", day.completed?"success":"info");
+}
+
+function handleSetButton(dayNum, setIndex, btn){
+  const day = state.days.find(d=>d.day===dayNum);
+  if(!day) return;
+  
+  if(btn.classList.contains("done")){
+    day.sets[setIndex] = null;
+    btn.classList.remove("done");
+    btn.querySelector(".icon").textContent = setIndex===0?"▶":"○";
+    btn.querySelector("span:last-child").textContent = setIndex===0?"Start":"Set";
+    btn.disabled = false;
+    btn.dataset.action = "start";
+    saveState();
+    renderProgress();
+    return;
+  }
+  
+  btn.classList.add("active");
+  btn.querySelector(".icon").textContent = "⏱";
+  btn.querySelector("span:last-child").textContent = "Working...";
+  btn.disabled = true;
+  
+  day.startTime = day.startTime || new Date().toISOString();
+  
+  setTimeout(()=>{
+    btn.dataset.action = "end";
+    btn.classList.remove("active");
+    btn.classList.add("primary");
+    btn.querySelector(".icon").textContent = "■";
+    btn.querySelector("span:last-child").textContent = "End Set";
+    btn.disabled = false;
+  }, 500);
+  
+  btn._endHandler = ()=>endSet(dayNum, setIndex, btn);
+  btn.addEventListener("click", btn._endHandler, {once:true});
+}
+
+function endSet(dayNum, setIndex, btn){
+  const day = state.days.find(d=>d.day===dayNum);
+  if(!day) return;
+  
+  const input = btn.closest(".set-row").querySelector(".set-input");
+  const reps = parseInt(input.value) || 0;
+  
+  day.sets[setIndex] = reps;
+  day.endTime = new Date().toISOString();
+  
+  btn.removeEventListener("click", btn._endHandler);
+  btn.classList.remove("primary");
+  btn.classList.add("done");
+  btn.querySelector(".icon").textContent = "✓";
+  btn.querySelector("span:last-child").textContent = "Done";
+  btn.disabled = true;
+  input.disabled = true;
+  
+  const sets = parseSets(day.workout);
+  const isLastSet = setIndex === sets.length - 1;
+  const isRestDay = day.isRest || day.workout === "REST";
+  const isGTG = day.isGTG;
+  const isTest = day.isTest;
+  
+  if(!isLastSet && !isRestDay && !isGTG && !isTest && day.rest > 0 && state.settings.autoRest){
+    startRestTimer(dayNum, day.rest, setIndex);
+  }
+  
+  saveState();
+  renderProgress();
+  checkDayComplete(dayNum);
+  showToast(`Set ${setIndex+1} complete: ${reps} reps`, "success");
+}
+
+function updateSetReps(dayNum, setIndex, reps){
+  const day = state.days.find(d=>d.day===dayNum);
+  if(!day) return;
+  day.sets[setIndex] = reps;
+  saveState();
+  renderProgress();
+}
+
+function updateComment(dayNum, comment){
+  const day = state.days.find(d=>d.day===dayNum);
+  if(!day) return;
+  const previous = day.comment || "";
+  day.comment = comment.trim();
+  saveState();
+  if(day.comment && day.comment !== previous) maybeRemakeFutureWorkouts(dayNum, day.comment);
+}
+
+async function maybeRemakeFutureWorkouts(dayNum, comment){
+  const settings=getAISettings();
+  if(settings.workoutMode !== "ai") return;
+  if(!settings.apiKey){
+    showToast("AI mode is selected, but no API key is connected. The original workout is unchanged.","error",5000);
+    return;
+  }
+  await remakeFutureWorkoutsWithAI(dayNum, comment);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REST TIMER
+// ═══════════════════════════════════════════════════════════════
+
+function startRestTimer(dayNum, seconds, setIndex){
+  const timerEl = $(`#timer-${dayNum}`);
+  const circle = $(`#timerCircle-${dayNum}`);
+  const text = $(`#timerText-${dayNum}`);
+  if(!timerEl) return;
+  
+  timerEl.classList.add("visible");
+  
+  const circumference = 2 * Math.PI * 22;
+  circle.style.strokeDasharray = circumference;
+  circle.style.strokeDashoffset = 0;
+  
+  const endTime = Date.now() + seconds * 1000;
+  state.activeTimers.set(dayNum, {endTime, setIndex, interval:null});
+  
+  const update = ()=>{
+    const remaining = Math.max(0, Math.ceil((endTime - Date.now())/1000));
+    text.textContent = formatTime(remaining);
+    const progress = 1 - remaining/seconds;
+    circle.style.strokeDashoffset = circumference * progress;
+    
+    if(remaining <= 0){
+      clearInterval(state.activeTimers.get(dayNum)?.interval);
+      state.activeTimers.delete(dayNum);
+      timerComplete(dayNum);
+    }
+  };
+  
+  update();
+  const interval = setInterval(update, 100);
+  state.activeTimers.get(dayNum).interval = interval;
+  
+  requestWakeLock();
+}
+
+function timerComplete(dayNum){
+  const timerEl = $(`#timer-${dayNum}`);
+  if(timerEl) timerEl.classList.remove("visible");
+  
+  playNotificationSound();
+  vibrate([200,100,200]);
+  showToast("Rest complete! Next set ready", "success");
+  
+  const day = state.days.find(d=>d.day===dayNum);
+  if(day){
+    const nextSetIndex = day.sets.findIndex((v,i)=>v==null);
+    if(nextSetIndex >= 0){
+      const nextBtn = $(`[data-day="${dayNum}"][data-set="${nextSetIndex}"].set-btn`);
+      nextBtn?.focus();
+    }
+  }
+  
+  releaseWakeLock();
+}
+
+function skipRestTimer(dayNum){
+  const timerData = state.activeTimers.get(dayNum);
+  if(timerData){
+    clearInterval(timerData.interval);
+    state.activeTimers.delete(dayNum);
+    $(`#timer-${dayNum}`).classList.remove("visible");
+    releaseWakeLock();
+    showToast("Rest skipped", "info");
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATS & CHARTS
+// ═══════════════════════════════════════════════════════════════
+
+function renderStats(){
+  const completedDays = state.days.filter(d=>d.completed);
+  const totalReps = state.days.reduce((sum,d)=>sum+d.sets.reduce((s,v)=>s+(v||0),0),0);
+  const totalSets = state.days.reduce((sum,d)=>sum+d.sets.filter(v=>v!=null).length,0);
+  const avgRepsPerSet = totalSets>0?Math.round(totalReps/totalSets):0;
+  const streak = calculateStreak();
+  const bestDay = state.days.reduce((best,d)=>{
+    const dayReps = d.sets.reduce((s,v)=>s+(v||0),0);
+    return dayReps > best.reps ? {day:d.day,reps:dayReps} : best;
+  },{day:0,reps:0});
+  
+  const testDays = state.days.filter(d=>d.isTest && d.completed);
+  const testProgress = testDays.map(d=>({
+    day:d.day,
+    reps:d.sets.reduce((s,v)=>s+(v||0),0)
+  }));
+  
+  $("#statsGrid").innerHTML = `
+    <div class="stat-card"><div class="stat-value">${completedDays.length}</div><div class="stat-label">Days Completed</div><div class="stat-sub">of ${state.days.length}</div></div>
+    <div class="stat-card"><div class="stat-value">${totalReps}</div><div class="stat-label">Total Reps</div><div class="stat-sub">${totalSets} sets logged</div></div>
+    <div class="stat-card"><div class="stat-value">${avgRepsPerSet}</div><div class="stat-label">Avg Reps/Set</div><div class="stat-sub">Across all sets</div></div>
+    <div class="stat-card"><div class="stat-value">${streak}</div><div class="stat-label">Current Streak</div><div class="stat-sub">Consecutive days</div></div>
+    <div class="stat-card"><div class="stat-value">${bestDay.day||"—"}</div><div class="stat-label">Best Day</div><div class="stat-sub">${bestDay.reps} reps (Day ${bestDay.day})</div></div>
+    <div class="stat-card"><div class="stat-value">${testProgress.length>0?testProgress[testProgress.length-1].reps:"—"}</div><div class="stat-label">Latest Test</div><div class="stat-sub">Day ${testProgress.length>0?testProgress[testProgress.length-1].day:0}</div></div>
+  `;
+  
+  renderVolumeChart(testProgress);
+  renderConsistencyChart();
+}
+
+function calculateStreak(){
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  for(let i=state.days.length-1;i>=0;i--){
+    const day = state.days[i];
+    if(day.completed && day.endTime){
+      const endDate = new Date(day.endTime);
+      endDate.setHours(0,0,0,0);
+      const diff = Math.floor((today - endDate) / (1000*60*60*24));
+      if(diff === streak || (streak===0 && diff<=1)){
+        streak++;
+        today.setDate(today.getDate()-1);
+      }else if(diff > streak+1){
+        break;
+      }
+    }else if(!day.completed){
+      if(streak>0) break;
+    }
+  }
+  return streak;
+}
+
+function renderVolumeChart(testProgress){
+  const canvas = $("#chartVolume");
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height;
+  
+  ctx.clearRect(0,0,w,h);
+  
+  const volumes = state.days.map(d=>({
+    day:d.day,
+    reps:d.sets.reduce((s,v)=>s+(v||0),0),
+    completed:d.completed,
+    isTest:d.isTest
+  })).filter(d=>d.reps>0 || d.completed);
+  
+  if(volumes.length===0){
+    ctx.font = "14px var(--font)";
+    ctx.fillStyle = "var(--fg-muted)";
+    ctx.textAlign = "center";
+    ctx.fillText("Complete workouts to see volume progression", w/2, h/2);
+    return;
+  }
+  
+  const maxReps = Math.max(...volumes.map(v=>v.reps), 50);
+  const padding = {top:20,right:20,bottom:30,left:40};
+  const plotW = w - padding.left - padding.right;
+  const plotH = h - padding.top - padding.bottom;
+  
+  ctx.strokeStyle = "var(--border)";
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){
+    const y = padding.top + (plotH/4)*i;
+    ctx.beginPath();ctx.moveTo(padding.left,y);ctx.lineTo(w-padding.right,y);ctx.stroke();
+  }
+  
+  ctx.font = "10px var(--font)";
+  ctx.fillStyle = "var(--fg-muted)";
+  ctx.textAlign = "center";
+  volumes.forEach((v,i)=>{
+    const x = padding.left + (plotW/(volumes.length-1||1))*i;
+    ctx.fillText(v.day, x, h-padding.bottom+14);
+  });
+  
+  ctx.textAlign = "right";
+  for(let i=0;i<=4;i++){
+    const val = Math.round(maxReps * (1 - i/4));
+    const y = padding.top + (plotH/4)*i;
+    ctx.fillText(val, padding.left-8, y+4);
+  }
+  
+  ctx.beginPath();
+  ctx.moveTo(padding.left, h-padding.bottom);
+  volumes.forEach((v,i)=>{
+    const x = padding.left + (plotW/(volumes.length-1||1))*i;
+    const y = h-padding.bottom - (v.reps/maxReps)*plotH;
+    ctx.lineTo(x,y);
+  });
+  volumes.forEach((v,i)=>{
+    const x = padding.left + (plotW/(volumes.length-1||1))*(volumes.length-1-i);
+    const y = h-padding.bottom;
+    ctx.lineTo(x,y);
+  });
+  ctx.closePath();
+  const plan = getPlan();
+  const grad = ctx.createLinearGradient(0,padding.top,0,h-padding.bottom);
+  grad.addColorStop(0,`${plan.color}33`);
+  grad.addColorStop(1,`${plan.color}00`);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  
+  ctx.beginPath();
+  volumes.forEach((v,i)=>{
+    const x = padding.left + (plotW/(volumes.length-1||1))*i;
+    const y = h-padding.bottom - (v.reps/maxReps)*plotH;
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = plan.color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  volumes.forEach((v,i)=>{
+    const x = padding.left + (plotW/(volumes.length-1||1))*i;
+    const y = h-padding.bottom - (v.reps/maxReps)*plotH;
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle = v.isTest ? "var(--red)" : (v.completed?"var(--green)":plan.color);
+    ctx.fill();
+    ctx.strokeStyle = "var(--bg)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+  
+  testProgress.forEach(t=>{
+    const dayData = volumes.find(v=>v.day===t.day);
+    if(dayData){
+      const x = padding.left + (plotW/(volumes.length-1||1))*volumes.indexOf(dayData);
+      const y = h-padding.bottom - (t.reps/maxReps)*plotH;
+      ctx.beginPath();
+      ctx.arc(x,y,6,0,Math.PI*2);
+      ctx.strokeStyle = "var(--red)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  });
+}
+
+function renderConsistencyChart(){
+  const canvas = $("#chartConsistency");
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height;
+  
+  ctx.clearRect(0,0,w,h);
+  
+  const cellSize = 12;
+  const gap = 3;
+  const cols = Math.floor(w / (cellSize+gap));
+  const rows = Math.ceil(state.days.length / cols);
+  
+  state.days.forEach((day,i)=>{
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = col * (cellSize+gap) + (w - cols*(cellSize+gap))/2;
+    const y = row * (cellSize+gap) + 10;
+    
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x,y,cellSize,cellSize,3);
+    else ctx.rect(x,y,cellSize,cellSize);
+    
+    if(day.completed){
+      const reps = day.sets.reduce((s,v)=>s+(v||0),0);
+      const intensity = Math.min(reps/50, 1);
+      const r = Math.round(55 + intensity*200);
+      const g = Math.round(185 - intensity*100);
+      ctx.fillStyle = `rgb(${r},${g},80)`;
+    }else if(isCurrentDay(day.day)){
+      ctx.fillStyle = `${getPlan().color}4D`;
+      ctx.strokeStyle = getPlan().color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }else{
+      ctx.fillStyle = "var(--bg)";
+      ctx.strokeStyle = "var(--border)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.fill();
+    
+    ctx.font = "8px var(--font)";
+    ctx.fillStyle = day.completed ? "#0d1117" : "var(--fg-muted)";
+    ctx.textAlign = "center";
+    ctx.fillText(day.day, x+cellSize/2, y+cellSize/2+3);
+  });
+  
+  ctx.font = "10px var(--font)";
+  ctx.fillStyle = "var(--fg-muted)";
+  ctx.textAlign = "left";
+  ctx.fillText("Completed", 10, h-20);
+  ctx.fillRect(85, h-26, 12, 12);
+  ctx.fillStyle = "rgb(55,185,80)";
+  ctx.fillRect(85, h-26, 12, 12);
+  ctx.fillText("Current", 105, h-20);
+  ctx.beginPath();ctx.roundRect(155, h-26, 12, 12, 3);
+  ctx.strokeStyle = getPlan().color;ctx.lineWidth=2;ctx.stroke();
+  ctx.fillText("Pending", 175, h-20);
+  ctx.beginPath();ctx.roundRect(230, h-26, 12, 12, 3);
+  ctx.fillStyle = "var(--bg)";ctx.fill();
+  ctx.strokeStyle = "var(--border)";ctx.lineWidth=1;ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// OPTIONAL AI COACH
+// ═══════════════════════════════════════════════════════════════
+
+const AI_STORAGE_KEY = "strengthProtocol_ai_v1";
+const AI_CHAT_KEY = "strengthProtocol_ai_chat_v1";
+let aiBusy = false;
+
+function getAISettings(){
+  try{
+    const raw=localStorage.getItem(AI_STORAGE_KEY);
+    const saved=raw?JSON.parse(raw):{};
+    return {
+      apiKey: typeof saved.apiKey === "string" ? saved.apiKey : "",
+      model: typeof saved.model === "string" && saved.model.trim() ? saved.model.trim() : "openai/gpt-4o-mini"
+    };
+  }catch(e){ return {apiKey:"",model:"openai/gpt-4o-mini"}; }
+}
+
+function saveAISettings(){
+  const key=$("#aiApiKey")?.value.trim()||"";
+  const model=$("#aiModel")?.value.trim()||"openai/gpt-4o-mini";
+  const workoutMode=$("#aiWorkoutMode")?.value==="ai" ? "ai" : "hardcoded";
+  localStorage.setItem(AI_STORAGE_KEY,JSON.stringify({apiKey:key,model,workoutMode}));
+  showToast(workoutMode==="ai" ? (key?"AI workout adaptation enabled":"Add an API key before using AI workout adaptation") : "Hardcoded workout mode enabled","success");
+}
+
+function clearAIKey(){
+  const settings=getAISettings();
+  localStorage.setItem(AI_STORAGE_KEY,JSON.stringify({apiKey:"",model:settings.model,workoutMode:settings.workoutMode}));
+  if($("#aiApiKey")) $("#aiApiKey").value="";
+  showToast("AI API key cleared from this browser","success");
+}
+
+function loadAISettingsUI(){
+  const settings=getAISettings();
+  if($("#aiApiKey")) $("#aiApiKey").value=settings.apiKey;
+  if($("#aiModel")) $("#aiModel").value=settings.model;
+  if($("#aiWorkoutMode")) $("#aiWorkoutMode").value=settings.workoutMode;
+}
+
+function getAIChat(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(AI_CHAT_KEY)||"[]");
+    return Array.isArray(parsed)?parsed.filter(m=>m&&typeof m.role==="string"&&typeof m.content==="string").slice(-20):[];
+  }catch(e){return [];}
+}
+
+function saveAIChat(messages){
+  localStorage.setItem(AI_CHAT_KEY,JSON.stringify(messages.slice(-20)));
+}
+
+function buildAIContext(){
+  const plan=getPlan();
+  const profile=getProfile()||{};
+  const currentDayNumber=getCurrentDayNumber();
+  const current=state.days.find(d=>d.day===currentDayNumber)||state.days.find(d=>!d.completed)||state.days[0];
+  const completed=state.days.filter(d=>d.completed).map(d=>({day:d.day,phase:d.phase,workout:d.workout,sets:d.sets,comment:d.comment||""}));
+  const future=state.days.filter(d=>!d.completed).slice(0,12).map(d=>({day:d.day,phase:d.phase,workout:d.workout,rest:d.rest,notes:d.notes,rir:d.rir,isRest:!!d.isRest,isTest:!!d.isTest}));
+  return {
+    exercise:plan.name,
+    goal:plan.goal,
+    currentMax:plan.currentMax,
+    targetMax:plan.targetMax,
+    programLength:state.days.length,
+    currentDay:current?.day||1,
+    currentPhase:current?.phase||state.currentPhase,
+    today:current?{day:current.day,workout:current.workout,notes:current.notes,comment:current.comment||"",sets:current.sets}:null,
+    completedRecent:completed.slice(-8),
+    upcoming:future,
+    profile:{name:profile.name||"",age:profile.age||null}
+  };
+}
+
+function aiSystemPrompt(){
+  return `You are the optional AI Coach inside Strength Protocol. Your job is to explain the user's existing program, progress, logged notes, and app behavior clearly and conservatively. Use the supplied app state as the source of truth. Do not invent completed workouts or program rules. Do not diagnose injuries or medical conditions. If the user mentions pain, injury, dizziness, fainting, breathing trouble, or another concerning symptom, do not diagnose or prescribe a workout; advise stopping the relevant activity and involving a parent/guardian or qualified healthcare professional as appropriate. Do not encourage extreme training, overtraining, restrictive eating, or body-comparison goals. You may explain what the app currently shows and suggest using the app's existing recovery/settings features. Keep answers concise and practical.`;
+}
+
+async function callAI(messages){
+  const settings=getAISettings();
+  if(!settings.apiKey) throw new Error("AI Coach is not connected. Add an OpenRouter API key in Settings.");
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),30000);
+  try{
+    const response=await fetch("https://openrouter.ai/api/v1/chat/completions",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":`Bearer ${settings.apiKey}`,
+        "HTTP-Referer":location.href,
+        "X-Title":"Strength Protocol"
+      },
+      body:JSON.stringify({model:settings.model,messages,temperature:.2,max_tokens:700}),
+      signal:controller.signal
+    });
+    const data=await response.json().catch(()=>null);
+    if(!response.ok){
+      const detail=data?.error?.message||`AI request failed (${response.status})`;
+      throw new Error(detail);
+    }
+    const content=data?.choices?.[0]?.message?.content;
+    if(typeof content!=="string"||!content.trim()) throw new Error("The AI returned an empty response.");
+    return content.trim();
+  }catch(err){
+    if(err?.name==="AbortError") throw new Error("The AI request timed out. Please try again.");
+    throw err;
+  }finally{clearTimeout(timeout);}
+}
+
+function buildAIWorkoutAdaptationPrompt(dayNum, comment){
+  const plan=getPlan();
+  const completed=state.days.filter(d=>d.completed).map(d=>({day:d.day,phase:d.phase,workout:d.workout,sets:d.sets,comment:d.comment||""}));
+  const future=state.days.filter(d=>!d.completed && d.day>dayNum).map(d=>({day:d.day,phase:d.phase,workout:d.workout,rest:d.rest,accessory:d.accessory,notes:d.notes,rir:d.rir,isTest:!!d.isTest,isGTG:!!d.isGTG,isRest:!!d.isRest,isDeload:!!d.isDeload,isNegative:!!d.isNegative}));
+  return `Remake only unfinished future workouts in this Strength Protocol plan based on the user's note.\nPLAN: ${JSON.stringify({exercise:plan.name,goal:plan.goal,currentMax:plan.currentMax,targetMax:plan.targetMax,programLength:state.days.length,phase:state.currentPhase})}\nNOTE (Day ${dayNum}): ${comment}\nCOMPLETED: ${JSON.stringify(completed.slice(-10))}\nFUTURE: ${JSON.stringify(future)}\nReturn JSON only: {"summary":"short explanation","days":[{"day":4,"workout":"...","rest":60,"accessory":"...","notes":"...","rir":"2–3","isTest":false,"isGTG":false,"isDeload":false,"isRest":false,"isNegative":false}]}\nRules: keep the exact future day numbers; do not include completed days; return every unfinished future day; keep total duration and the Foundation/Build/Peak/Taper structure; make conservative adjustments; never use extreme volume/intensity; do not diagnose pain/injury; for concerning symptoms favor recovery/stop guidance; preserve the final test/max day unless recovery clearly requires a change.`;
+}
+
+function extractJSON(text){
+  const cleaned=String(text||"").replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/i,"").trim();
+  try{return JSON.parse(cleaned);}catch(e){}
+  const start=cleaned.indexOf("{"), end=cleaned.lastIndexOf("}");
+  if(start>=0&&end>start){try{return JSON.parse(cleaned.slice(start,end+1));}catch(e){}}
+  return null;
+}
+
+function validateAIWorkoutRewrite(result, dayNum){
+  if(!result || !Array.isArray(result.days)) throw new Error("The AI returned an invalid workout plan.");
+  const future=state.days.filter(d=>!d.completed && d.day>dayNum);
+  const allowed=new Set(future.map(d=>d.day));
+  const returned=new Map();
+  for(const item of result.days){
+    const n=Number(item.day);
+    if(!allowed.has(n)||returned.has(n)) throw new Error("The AI returned an invalid future day.");
+    if(typeof item.workout!=="string"||!item.workout.trim()) throw new Error("The AI returned a missing workout.");
+    returned.set(n,item);
+  }
+  if(returned.size!==allowed.size) throw new Error("The AI did not return every unfinished future workout.");
+  return future.map(original=>{
+    const item=returned.get(original.day);
+    return {...original,workout:String(item.workout).slice(0,120),rest:Number.isFinite(Number(item.rest))?Math.max(0,Math.min(900,Number(item.rest))):original.rest,accessory:typeof item.accessory==="string"?item.accessory.slice(0,220):original.accessory,notes:typeof item.notes==="string"?item.notes.slice(0,300):original.notes,rir:typeof item.rir==="string"?item.rir.slice(0,20):original.rir,isTest:!!item.isTest,isGTG:!!item.isGTG,isDeload:!!item.isDeload,isRest:!!item.isRest,isNegative:!!item.isNegative,completed:false,sets:[],startTime:null,endTime:null,comment:""};
+  });
+}
+
+async function remakeFutureWorkoutsWithAI(dayNum, comment){
+  if(aiBusy) return;
+  aiBusy=true;
+  try{
+    const resultText=await callAI([{role:"system",content:`You are the workout adaptation engine for Strength Protocol. ${aiSystemPrompt()} Return JSON only when asked for a workout rewrite.`},{role:"user",content:buildAIWorkoutAdaptationPrompt(dayNum,comment)}]);
+    const result=extractJSON(resultText);
+    const rewritten=validateAIWorkoutRewrite(result,dayNum);
+    const byDay=new Map(rewritten.map(d=>[d.day,d]));
+    state.days=state.days.map(d=>byDay.get(d.day)||d);
+    saveState();
+    renderAll();
+    const summary=typeof result.summary==="string"?result.summary.trim():"Future workouts were adjusted from your note.";
+    showToast(`AI updated future workouts. ${summary}`.slice(0,260),"success",6500);
+  }catch(err){
+    console.error("AI workout adaptation failed:",err);
+    showToast(err?.message||"AI could not remake the future workouts. Your existing plan is unchanged.","error",6500);
+  }finally{aiBusy=false;}
+}
+
+function renderAIChat(){
+  const box=$("#aiChatMessages");
+  if(!box) return;
+  const messages=getAIChat();
+  box.innerHTML="";
+  if(!messages.length){
+    const welcome=document.createElement("div");
+    welcome.className="ai-msg system";
+    welcome.textContent="Ask me about the program currently loaded in Strength Protocol.";
+    box.appendChild(welcome);
+  }else{
+    messages.forEach(m=>{
+      const el=document.createElement("div");
+      el.className=`ai-msg ${m.role==="user"?"user":"assistant"}`;
+      el.textContent=m.content;
+      box.appendChild(el);
+    });
+  }
+  box.scrollTop=box.scrollHeight;
+}
+
+async function handleAIChatSubmit(event){
+  event.preventDefault();
+  if(aiBusy) return;
+  const input=$("#aiChatInput");
+  const text=input?.value.trim();
+  if(!text) return;
+  const settings=getAISettings();
+  if(!settings.apiKey){
+    openModal("settings");
+    showToast("Add an OpenRouter API key in Settings to use AI Coach","info",6000);
+    return;
+  }
+  const history=getAIChat();
+  const userMessage={role:"user",content:text};
+  const context=buildAIContext();
+  const requestMessages=[
+    {role:"system",content:aiSystemPrompt()},
+    {role:"system",content:`Current Strength Protocol app state (JSON):\n${JSON.stringify(context)}`},
+    ...history,
+    userMessage
+  ];
+  history.push(userMessage);
+  saveAIChat(history);
+  input.value="";
+  renderAIChat();
+  aiBusy=true;
+  const button=$("#aiSendButton"),status=$("#aiStatus");
+  if(button){button.disabled=true;button.textContent="Thinking…";}
+  if(status) status.textContent="AI Coach is reading your current app state…";
+  try{
+    const answer=await callAI(requestMessages);
+    const updated=getAIChat();
+    updated.push({role:"assistant",content:answer});
+    saveAIChat(updated);
+    renderAIChat();
+  }catch(err){
+    const message=err?.message||"The AI request failed.";
+    const updated=getAIChat();
+    updated.push({role:"assistant",content:`I couldn't answer that right now. ${message}`});
+    saveAIChat(updated);
+    renderAIChat();
+  }finally{
+    aiBusy=false;
+    if(button){button.disabled=false;button.textContent="Send";}
+    if(status) status.textContent="";
+  }
+}
+
+function clearAIChat(){
+  localStorage.removeItem(AI_CHAT_KEY);
+  renderAIChat();
+}
+
+// MODALS
+// ═══════════════════════════════════════════════════════════════
+
+function openModal(id){
+  $(`#modal${id.charAt(0).toUpperCase()+id.slice(1)}`).classList.add("visible");
+  document.body.style.overflow = "hidden";
+  if(id==="stats") renderStats();
+}
+
+function closeModal(id){
+  $(`#modal${id.charAt(0).toUpperCase()+id.slice(1)}`).classList.remove("visible");
+  document.body.style.overflow = "";
+}
+
+$$("[data-close-modal]").forEach(btn=>{
+  btn.addEventListener("click",()=>closeModal(btn.dataset.closeModal));
+});
+$$(".modal-overlay").forEach(overlay=>{
+  overlay.addEventListener("click",(e)=>{if(e.target===overlay)closeModal(overlay.id.replace("modal","").toLowerCase())});
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════════
+
+function applySettings(){
+  $$(".toggle").forEach(t=>t.classList.remove("active"));
+  $("#toggleSound").classList.toggle("active", state.settings.sound);
+  $("#toggleHaptic").classList.toggle("active", state.settings.haptic);
+  $("#toggleAutoRest").classList.toggle("active", state.settings.autoRest);
+  $("#toggleWakeLock").classList.toggle("active", state.settings.wakeLock);
+  $("#toggleCompact").classList.toggle("active", state.settings.compact);
+  $("#toggleRIR").classList.toggle("active", state.settings.showRIR);
+  
+  document.body.classList.toggle("compact", state.settings.compact);
+  
+  $("#toggleSound").setAttribute("aria-checked", state.settings.sound);
+  $("#toggleHaptic").setAttribute("aria-checked", state.settings.haptic);
+  $("#toggleAutoRest").setAttribute("aria-checked", state.settings.autoRest);
+  $("#toggleWakeLock").setAttribute("aria-checked", state.settings.wakeLock);
+  $("#toggleCompact").setAttribute("aria-checked", state.settings.compact);
+  $("#toggleRIR").setAttribute("aria-checked", state.settings.showRIR);
+}
+
+const SETTING_KEY_MAP = {
+  sound: "sound",
+  haptic: "haptic",
+  autorest: "autoRest",
+  wakelock: "wakeLock",
+  compact: "compact",
+  rir: "showRIR"
+};
+
+$$(".toggle").forEach(toggle=>{
+  toggle.addEventListener("click",()=>{
+    const rawKey = toggle.id.replace(/^toggle/, "").toLowerCase();
+    const settingKey = SETTING_KEY_MAP[rawKey];
+    if(!settingKey || !(settingKey in state.settings)) return;
+    state.settings[settingKey] = !state.settings[settingKey];
+    saveState();
+    applySettings();
+    if(settingKey==="showRIR" || settingKey==="compact") renderDayCards();
+  });
+});
+
+$("#btnExport").addEventListener("click",()=>{
+  const plan = getPlan();
+  const data = {plan:currentPlanId,days:state.days,settings:state.settings,exported:new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `${currentPlanId}-backup-${new Date().toISOString().split("T")[0]}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast(`${plan.name} data exported`, "success");
+  closeModal("settings");
+});
+
+$("#btnImport").addEventListener("click",()=>{
+  const input = document.createElement("input");
+  input.type = "file"; input.accept = ".json";
+  input.onchange = (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      try{
+        const data = JSON.parse(ev.target.result);
+        if(data.plan && data.plan !== currentPlanId){
+          showToast(`This backup is for ${data.plan}. Switch plans first.`, "error");
+          return;
+        }
+        if(data.days){ state.days = data.days; }
+        if(data.settings){ state.settings = {...state.settings, ...data.settings}; }
+        saveState();
+        renderAll();
+        showToast("Data imported successfully", "success");
+      }catch(err){
+        showToast("Invalid backup file", "error");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+
+let pendingResetType = null;
+let pendingResetExerciseId = null;
+
+function populateExerciseResetSelect(){
+  const select=$("#resetExerciseSelect");
+  if(!select) return;
+  const plans=getAvailablePlans();
+  select.innerHTML=plans.map(p=>`<option value="${p.id}">${p.emoji||"✦"} ${p.name}</option>`).join("");
+  if(plans.some(p=>p.id===currentPlanId)) select.value=currentPlanId;
+}
+
+function openResetFlow(){
+  pendingResetType=null;
+  pendingResetExerciseId=null;
+  populateExerciseResetSelect();
+  openModal("resetChoice");
+}
+
+function requestFullReset(){
+  pendingResetType="full";
+  pendingResetExerciseId=null;
+  $("#resetConfirmTitle").textContent="Reset the entire app?";
+  $("#resetConfirmSubtitle").textContent="You'll return to the welcome setup after this reset.";
+  $("#resetConfirmMessage").innerHTML="<b>This will erase your profile, all exercises, workout history, settings and saved plans.</b><br><br>The app will then open the first-time setup so you can build a fresh program.";
+  closeModal("resetChoice");
+  openModal("resetConfirm");
+}
+
+function requestExerciseReset(){
+  populateExerciseResetSelect();
+  closeModal("resetChoice");
+  openModal("exerciseReset");
+}
+
+function requestSelectedExerciseReset(){
+  const id=$("#resetExerciseSelect")?.value;
+  const plan=id?PLANS[id]:null;
+  if(!plan){showToast("Choose an exercise first","error");return;}
+  pendingResetType="exercise";
+  pendingResetExerciseId=id;
+  $("#resetConfirmTitle").textContent=`Reset ${plan.name}?`;
+  $("#resetConfirmSubtitle").textContent="Only this exercise's workout progress will be reset.";
+  $("#resetConfirmMessage").innerHTML=`<b>${plan.name} will return to Day 1.</b><br><br>Completed days, logged sets, comments and its start date will be cleared. Your profile and every other exercise will remain unchanged.`;
+  closeModal("exerciseReset");
+  openModal("resetConfirm");
+}
+
+function resetExerciseData(id){
+  const plan=PLANS[id];
+  if(!plan) throw new Error("Exercise not found");
+  const freshDays=plan.defaultPlan.map(d=>({...d,completed:false,sets:[],comment:"",startTime:null,endTime:null}));
+  localStorage.setItem(`${STORAGE_PREFIX}_${id}_days`,JSON.stringify(freshDays));
+  localStorage.removeItem(`${STORAGE_PREFIX}_${id}_startDate`);
+  localStorage.removeItem(`${STORAGE_PREFIX}_${id}_recovery`);
+  localStorage.removeItem(`${STORAGE_PREFIX}_${id}_prs`);
+  localStorage.removeItem(`${STORAGE_PREFIX}_${id}_recovery_v2`);
+  localStorage.removeItem(`${STORAGE_PREFIX}_${id}_prs_v2`);
+  if(currentPlanId===id){
+    state.activeTimers.forEach(t=>clearInterval(t.interval)); state.activeTimers.clear();
+    releaseWakeLock();
+    state.days=freshDays;
+    state.currentPhase="foundation";
+    loadState();
+  }
+}
+
+function resetEntireApp(){
+  const keysToRemove=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(key && (key.startsWith("strengthProtocol_") || key.startsWith("strengthProtocol_v2_"))) keysToRemove.push(key);
+  }
+  keysToRemove.forEach(key=>localStorage.removeItem(key));
+  state.activeTimers.forEach(t=>clearInterval(t.interval));
+  state.activeTimers.clear();
+  releaseWakeLock();
+  pendingResetType=null; pendingResetExerciseId=null;
+  closeModal("resetConfirm");
+  // Reloading after a full wipe restores the original built-in definitions and opens onboarding.
+  window.location.reload();
+}
+
+function confirmPendingReset(){
+  try{
+    if(pendingResetType==="full") return resetEntireApp();
+    if(pendingResetType==="exercise" && pendingResetExerciseId){
+      const planName=PLANS[pendingResetExerciseId]?.name||"Exercise";
+      resetExerciseData(pendingResetExerciseId);
+      pendingResetType=null; pendingResetExerciseId=null;
+      closeModal("resetConfirm");
+      renderAll();
+      showToast(`${planName} has been reset to Day 1`,"success",4500);
+    }
+  }catch(err){
+    console.error("Reset failed",err);
+    pendingResetType=null; pendingResetExerciseId=null;
+    closeModal("resetConfirm");
+    showToast("Reset could not be completed. Your data was left unchanged.","error",6000);
+  }
+}
+
+$("#btnReset").addEventListener("click",openResetFlow);
+$("#btnFullResetChoice").addEventListener("click",requestFullReset);
+$("#btnExerciseResetChoice").addEventListener("click",requestExerciseReset);
+$("#btnContinueExerciseReset").addEventListener("click",requestSelectedExerciseReset);
+$("#btnConfirmReset").addEventListener("click",confirmPendingReset);
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM DAY
+// ═══════════════════════════════════════════════════════════════
+
+$("#btnAddDay")?.addEventListener("click",()=>openModal("addDay"));
+
+$("#btnSaveCustomDay").addEventListener("click",()=>{
+  const dayNum = parseInt($("#customDayNum").value);
+  const phase = $("#customPhase").value;
+  const workout = $("#customWorkout").value.trim();
+  const accessory = $("#customAccessory").value.trim();
+  const rir = $("#customRIR").value.trim() || "2–3";
+  const isTest = $("#customIsTest").checked;
+  const isGTG = $("#customIsGTG").checked;
+  const isDeload = $("#customIsDeload").checked;
+  const isRest = $("#customIsRest").checked;
+  const isNegative = $("#customIsNegative").checked;
+  
+  if(!dayNum || dayNum<1 || dayNum>60){
+    showToast("Please enter a valid day number (1-60)", "error");
+    return;
+  }
+  if(!workout){
+    showToast("Please enter a workout description", "error");
+    return;
+  }
+  
+  const existing = state.days.findIndex(d=>d.day===dayNum);
+  const newDay = {
+    day:dayNum, phase, workout, rest: isRest||isGTG?0:60,
+    accessory: accessory || "—", notes: workout, rir,
+    isTest, isGTG, isDeload, isRest, isNegative,
+    completed:false, sets:[], comment:"", startTime:null, endTime:null
+  };
+  
+  if(existing>=0) state.days[existing] = newDay;
+  else state.days.push(newDay);
+  
+  state.days.sort((a,b)=>a.day-b.day);
+  saveState();
+  renderAll();
+  closeModal("addDay");
+  showToast(`Day ${dayNum} ${existing>=0?"updated":"added"}`, "success");
+});
+
+// ═══════════════════════════════════════════════════════════════
+// PLAN SWITCHER
+// ═══════════════════════════════════════════════════════════════
+
+$$(".plan-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const newPlan = btn.dataset.plan;
+    if(newPlan === currentPlanId) return;
+    
+    // Clear any active timers
+    state.activeTimers.forEach(t=>clearInterval(t.interval));
+    state.activeTimers.clear();
+    releaseWakeLock();
+    
+    currentPlanId = newPlan;
+    state.currentPhase = "foundation";
+    loadState();
+    renderAll();
+    showToast(`Switched to ${PLANS[newPlan].name}`, "info");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════════
+
+document.addEventListener("keydown",(e)=>{
+  if(["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)) return;
+  
+  if(e.key==="s" && (e.metaKey || e.ctrlKey)){
+    e.preventDefault(); openModal("stats");
+  }
+  if(e.key==="/" && (e.metaKey || e.ctrlKey)){
+    e.preventDefault(); openModal("settings");
+  }
+  if(e.key==="Escape"){
+    $$(".modal-overlay.visible").forEach(m=>closeModal(m.id.replace("modal","").toLowerCase()));
+  }
+  if(e.key==="p" && (e.metaKey || e.ctrlKey)){
+    e.preventDefault();
+    const active=getAvailablePlans().map(p=>p.id);
+    if(active.length>1){ const idx=active.indexOf(currentPlanId); switchPlan(active[(idx+1)%active.length]); }
+  }
+  if(e.key>="1" && e.key<="9" && e.altKey){
+    const dayNum = parseInt(e.key);
+    const card = $(`.day-card[data-day="${dayNum}"]`);
+    if(card){ card.scrollIntoView({behavior:"smooth",block:"center"}); card.style.animation="pulse .5s ease"; }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+
+function init(){
+  loadCustomPlans();
+  if(!getActivePlanIds()){ saveActivePlanIds([currentPlanId && PLANS[currentPlanId] ? currentPlanId : "pushup"]); }
+  if(!PLANS[currentPlanId] || !getAvailablePlans().some(p=>p.id===currentPlanId)) currentPlanId=getAvailablePlans()[0]?.id || "pushup";
+  loadState();
+  renderAll();
+  if(!hasCompletedOnboarding()){ openOnboarding(); }
+  
+  $("#btnStats").addEventListener("click",()=>openModal("stats"));
+  $("#btnSettings").addEventListener("click",()=>openModal("settings"));
+  $("#btnAICoach")?.addEventListener("click",()=>{loadAISettingsUI();renderAIChat();openModal("aiCoach");});
+  // The AI Coach modal is declared after the main script, so the global
+  // [data-close-modal] binding above cannot see its close button at script load.
+  // Bind the AI close button after DOM initialization as well.
+  $("#modalAiCoach [data-close-modal=\"aiCoach\"]")?.addEventListener("click",()=>closeModal("aiCoach"));
+  $("#aiChatForm")?.addEventListener("submit",handleAIChatSubmit);
+  $("#btnSaveAISettings")?.addEventListener("click",saveAISettings);
+  $("#btnClearAIKey")?.addEventListener("click",clearAIKey);
+  loadAISettingsUI();
+  $("#btnCreateProgram")?.addEventListener("click",()=>openCreateProgram());
+  $("#btnGenerateProgram")?.addEventListener("click",generateCustomProgram);
+
+  $("#onboardingBack")?.addEventListener("click",()=>setOnboardingStep(Math.max(1,onboardingStep-1)));
+  function syncOnboardExercise(){
+    const select = $("#onboardExercise");
+    const wrap = $("#onboardCustomWrap");
+    const input = $("#onboardCustomName");
+    const isCustom = select?.value === "custom";
+    if(wrap){
+      wrap.hidden = !isCustom;
+      wrap.setAttribute("aria-hidden", String(!isCustom));
+    }
+    if(input){
+      input.disabled = !isCustom;
+      input.required = isCustom;
+      if(!isCustom) input.value = "";
+    }
+  }
+  $("#onboardExercise")?.addEventListener("change", syncOnboardExercise);
+  syncOnboardExercise();
+  ["onboardCurrent","onboardGoal","onboardDuration"].forEach(id=>$("#"+id)?.addEventListener("input",updateOnboardingPreview));
+  // Enter = Continue / Next step throughout onboarding.
+  // Keep textareas free for normal newlines and let buttons retain their native click behavior.
+  $("#onboardingOverlay")?.addEventListener("keydown",e=>{
+    if(e.key==="Escape"&&!hasCompletedOnboarding()){ e.preventDefault(); return; }
+    if(e.key!=="Enter" || e.isComposing) return;
+
+    const tag=e.target?.tagName;
+    if(tag==="TEXTAREA" || tag==="BUTTON") return;
+
+    // Pressing Enter from any onboarding input/select advances exactly like Continue.
+    e.preventDefault();
+    e.stopPropagation();
+    handleOnboardingNext();
+  }, true);
+  $("#exerciseManagerSelect")?.addEventListener("change",()=>{const id=getManagedPlanId();const plan=PLANS[id];if(plan) renderAccentPicker("#exerciseAccentPicker","#exerciseAccentSelect",plan.color,id);});
+  $("#programExerciseType")?.addEventListener("change",syncProgramExerciseType);
+  renderAccentPicker("#onboardAccentPicker","#onboardAccent",getUnusedAccent());
+  $("#onboardExercise")?.addEventListener("change",()=>{syncOnboardExercise(); renderAccentPicker("#onboardAccentPicker","#onboardAccent",getUnusedAccent());});
+  $("#btnEditExercise")?.addEventListener("click",()=>{
+    const id=getManagedPlanId();
+    if(!PLANS[id]) return showToast("Choose an exercise first","error");
+    closeModal("settings");
+    openCreateProgram(id);
+  });
+  $("#btnRemoveExercise")?.addEventListener("click",removeSelectedExercise);
+  ["programName","programCurrent","programGoal","programNote"].forEach(id=>$("#"+id)?.addEventListener("input",updateProgramPreview));
+  $("#programFrequency")?.addEventListener("change",updateProgramPreview);
+  $("#programDuration")?.addEventListener("change",updateProgramPreview);
+  
+  // Service worker registration is omitted here for file:// compatibility.
+  
+  const keys = getStorageKeys();
+  if(!localStorage.getItem(keys.startDate)){
+    showToast(`Welcome to ${getPlan().name}! Your 30-day journey starts today.`, "info");
+  }
+  
+  console.log(`%c💪 Strength Protocol Loaded (${getPlan().name})`, `color:${getPlan().color};font-size:1.5rem;font-weight:bold`);
+  console.log("%cShortcuts: ⌘/ Settings, ⌘S Stats, ⌘P Switch Plan, Alt+1-9 Jump to day", "color:#8b949e");
+}
+
+// Critical onboarding action is bound independently of renderAll/init so a dashboard
+// rendering problem can never disable the primary Build button.
+function bindOnboardingBuildButton(){
+  const button=$("#onboardingNext");
+  if(!button || button.dataset.buildBound==="1") return;
+  button.dataset.buildBound="1";
+  button.addEventListener("click",e=>{
+    e.preventDefault();
+    if(button.disabled) return;
+    handleOnboardingNext();
+  });
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>{
+    bindOnboardingBuildButton();
+    init();
+  },{once:true});
+}else{
+  bindOnboardingBuildButton();
+  init();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER
+// ═══════════════════════════════════════════════════════════════
+
+function checkDayComplete(dayNum){
+  const day = state.days.find(d=>d.day===dayNum);
+  if(!day) return;
+  
+  const sets = parseSets(day.workout);
+  const allSetsDone = sets.every((_,i)=>day.sets[i]!=null);
+  const isRest = day.isRest || day.workout === "REST";
+  const isGTG = day.isGTG;
+  
+  if((allSetsDone || isRest || isGTG) && !day.completed){
+    day.completed = true;
+    day.endTime = new Date().toISOString();
+    saveState();
+    renderDayCards();
+    renderProgress();
+    showToast(`🎉 Day ${dayNum} complete!`, "success");
+  }
+}
+</script>
+
+<button type="button" class="ai-coach-fab" id="btnAICoach" aria-label="Open AI Coach">✦ AI Coach</button>
+
+<div class="modal-overlay" id="modalAiCoach" role="dialog" aria-modal="true" aria-labelledby="aiCoachTitle">
+  <div class="modal ai-coach-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-kicker">OPTIONAL AI</div>
+        <h2 class="modal-title" id="aiCoachTitle">AI Coach</h2>
+      </div>
+      <button type="button" class="modal-close" data-close-modal="aiCoach" aria-label="Close AI Coach">&times;</button>
+    </div>
+    <div class="ai-chat-body">
+      <div class="ai-chat-messages" id="aiChatMessages" aria-live="polite"></div>
+      <div class="ai-status" id="aiStatus"></div>
+      <form class="ai-chat-composer" id="aiChatForm">
+        <textarea id="aiChatInput" class="comment-input" rows="2" maxlength="1200" placeholder="Ask about your current program, progress, or what a day means…" aria-label="Message AI Coach"></textarea>
+        <button type="submit" class="btn btn-primary" id="aiSendButton">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>
